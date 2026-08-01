@@ -7,7 +7,7 @@ API NestJS 11 (Postgres + TypeORM, logging con pino). Las features viven en `src
 - `npm run start:dev` — servidor dev con watch
 - `npm run build` — compila a `dist/` (lo borra antes). Buen typecheck de saneamiento; `npx tsc --noEmit` también funciona.
 - `npm run lint` — ESLint con tipos (`recommendedTypeChecked`) y **ejecuta `--fix`** (muta archivos)
-- `npm run format` — Prettier (2 espacios, `singleQuote`, `trailingComma: all`)
+- `npm run format` — Prettier (`singleQuote`, `trailingComma: all`)
 - `npm test` — tests unitarios Jest (`*.spec.ts`, rootDir `src`)
 - `npm run test:e2e` — tests e2e (`*.e2e-spec.ts`)
 
@@ -25,8 +25,41 @@ API NestJS 11 (Postgres + TypeORM, logging con pino). Las features viven en `src
 
 ## Estructura de features
 
-- Cada feature en `src/modules/<feature>/` con subcarpetas `entities/`, `controllers/` y `services/`, más su `<feature>.module.ts` (debe importarse en `AppModule`).
-- Patrón usado: `@InjectRepository(Entity)` en el service + `TypeOrmModule.forFeature([Entity])` en el módulo de la feature.
+Cada feature en `src/modules/<feature>/` con subcarpetas `entities/`, `controllers/`, `services/` y `dtos/`, más su `<feature>.module.ts` (debe importarse en `AppModule`):
+
+```
+src/modules/products/
+├── controllers/          # endpoints REST
+│   ├── products.controller.ts
+│   └── base-products.controller.ts
+├── dtos/                 # una subcarpeta por recurso: dtos/product/, dtos/base-product/
+│   └── product/
+│       └── create-product.dto.ts
+├── entities/             # una clase por tabla
+│   ├── producto.entity.ts
+│   ├── base-product.entity.ts
+│   └── product-attribute.entity.ts
+├── services/             # lógica de negocio + @InjectRepository
+│   ├── products.service.ts
+│   └── base-products.service.ts
+└── products.module.ts    # TypeOrmModule.forFeature([...]) + providers + controllers
+```
+
+Patrón usado: `@InjectRepository(Entity)` en el service + `TypeOrmModule.forFeature([Entity])` en el módulo de la feature.
+
+### DTOs y validación
+
+- `main.ts` registra `new ValidationPipe({ whitelist: true, transform: true })` global. Con `whitelist: true`, **todo campo que recibe el body necesita un decorator de validación**, si no se descarta en silencio.
+- Para campos numéricos añade `@Type(() => Number)` (de `class-transformer`) junto a `@IsNumber()`: `transform: true` convierte strings a number, pero solo si el decorator `@Type` está presente.
+- Objetos anidados (p. ej. `productAttributes: { attributeId, attributeValueId }[]`) requieren una clase DTO aparte decorada y `@ValidateNested({ each: true })` + `@Type(() => MiDto)`.
+- `class-validator` y `class-transformer` ya están instalados.
+- Cada propiedad lleva `@ApiProperty(...)` (de `@nestjs/swagger`) para aparecer en Scalar (ver sección Documentación). Usa `@ApiProperty({ type: () => [MiDto] })` para arreglos de DTOs.
+
+## Flujo de specs (spec-driven)
+
+- Los specs viven en `specs/` (`NN-slug.md`, estado en `Status:`: `Draft`/`Aprobado`/`Implementado`, etc.) con config en `specs/.spec-config.yml`.
+- Flujo: `/spec` diseña y guarda el spec (Draft) → el humano lo cambia a `Aprobado` → `/spec-impl NN-slug` crea la rama `spec-NN-slug`, implementa paso a paso pausando tras cada paso, y al final verifica los acceptance criteria y marca el spec `Implementado`.
+- No marques un spec como `Aprobado` por tu cuenta; eso lo hace el humano.
 
 ## Documentación (Scalar / OpenAPI)
 
@@ -38,5 +71,6 @@ API NestJS 11 (Postgres + TypeORM, logging con pino). Las features viven en `src
 
 - El alias de rutas `@/*` → `./src/*` funciona en la app y en el CLI de migraciones (tsconfig-paths), pero **Jest no tiene `moduleNameMapper`** — los archivos de test deben usar imports relativos o `@/` fallará en runtime.
 - El logging es `nestjs-pino`: transporte pino-pretty solo cuando `NODE_ENV !== 'production'` (prod = JSON plano). `main.ts` usa `bufferLogs` + `app.useLogger(app.get(Logger))`.
-- `npm run lint` reformatea código que se desvíe de Prettier (p. ej. las entidades actuales usan comillas dobles / 4 espacios / sin punto y coma).
+- `npm run lint` reformatea código que se desvíe de Prettier (las entidades se escriben en comillas dobles / 4 espacios / sin punto y coma; tras un lint quedan en single quote).
 - El `README.md` es la plantilla upstream de Nest, no describe este repo.
+- `npm install` puede avisar de paquetes con scripts no aprobados (nestjs/swc/scarf); no rompe la instalación.
