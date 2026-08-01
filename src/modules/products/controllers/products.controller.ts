@@ -3,21 +3,20 @@ import { ProductsService } from '../services/products.service';
 
 @Controller('products')
 export class ProductsController {
+  constructor(private readonly productsService: ProductsService) {}
 
-    constructor(private readonly productsService: ProductsService) { }
+  @Post()
+  create() {}
 
-    @Post()
-    create() { }
+  @Get()
+  findAll() {}
 
-    @Get()
-    findAll() { }
+  @Get(':id')
+  findOne() {}
 
-    @Get(':id')
-    findOne() { }
+  @Patch(':id')
+  update() {}
 
-    @Patch(':id')
-    update() { }
-
-    @Delete(':id')
-    remove() { }
+  @Delete(':id')
+  remove() {}
 }

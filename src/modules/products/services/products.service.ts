@@ -5,19 +5,18 @@ import { Product } from '../entities/producto.entity';
 
 @Injectable()
 export class ProductsService {
+  constructor(
+    @InjectRepository(Product)
+    private readonly productRepository: Repository<Product>,
+  ) {}
 
-    constructor(
-        @InjectRepository(Product)
-        private readonly productRepository: Repository<Product>,
-    ) { }
+  create() {}
 
-    create() { }
+  findAll() {}
 
-    findAll() { }
+  findOne() {}
 
-    findOne() { }
+  update() {}
 
-    update() { }
-
-    remove() { }
+  remove() {}
 }

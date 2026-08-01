@@ -1,6 +1,6 @@
 # SPEC 01 — Atributos, stock de producto y relación producto-atributo
 
-> **Status:** Aprobado
+> **Status:** Implementado
 > **Depends on:** —
 > **Date:** 2026-08-01
 > **Objective:** Crear las entidades `attribute` y `attribute_value`, agregar `stock` al producto y enlazar cada producto con un único valor por atributo mediante una entidad de unión explícita.
@@ -94,18 +94,18 @@ Convenciones:
 
 ## Acceptance criteria
 
-- [ ] Existen `attribute.entity.ts` y `attribute-value.entity.ts` en `src/modules/attributes/entities/`.
-- [ ] `AttributeValue` tiene FK `attributeId` a `attribute`.
-- [ ] `attribute_value` tiene constraint único sobre `(attributeId, value)`.
-- [ ] `Product` incluye la columna `stock` de tipo `decimal(10,2)` con `default 0`.
-- [ ] Existe `product-attribute.entity.ts` con FKs a `product`, `attribute` y `attribute_value`.
-- [ ] `product_attribute` tiene constraint único sobre `(productId, attributeId)`.
-- [ ] `AttributesModule` está importado en `AppModule`.
-- [ ] `ProductsModule.forFeature` incluye `ProductAttribute`.
-- [ ] `npm run migration:add` generó una migración coherente (3 tablas + `ALTER product`).
-- [ ] `npm run migration:run` finaliza sin errores contra la BD de docker.
-- [ ] `npm run build` compila sin errores de tipos.
-- [ ] `npm run lint` pasa sin errores.
+- [x] Existen `attribute.entity.ts` y `attribute-value.entity.ts` en `src/modules/attributes/entities/`.
+- [x] `AttributeValue` tiene FK `attributeId` a `attribute`.
+- [x] `attribute_value` tiene constraint único sobre `(attributeId, value)`.
+- [x] `Product` incluye la columna `stock` de tipo `decimal(10,2)` con `default 0`.
+- [x] Existe `product-attribute.entity.ts` con FKs a `product`, `attribute` y `attribute_value`.
+- [x] `product_attribute` tiene constraint único sobre `(productId, attributeId)`.
+- [x] `AttributesModule` está importado en `AppModule`.
+- [x] `ProductsModule.forFeature` incluye `ProductAttribute`.
+- [x] `npm run migration:add` generó una migración coherente (3 tablas + `ALTER product`).
+- [x] `npm run migration:run` finaliza sin errores contra la BD de docker.
+- [x] `npm run build` compila sin errores de tipos.
+- [x] `npm run lint` pasa sin errores.
 
 ## Decisions
 
