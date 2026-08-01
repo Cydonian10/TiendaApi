@@ -19,4 +19,4 @@ import { buildDataSourceOptions } from './database.config';
   ],
   exports: [TypeOrmModule],
 })
-export class DatabaseModule { }
+export class DatabaseModule {}

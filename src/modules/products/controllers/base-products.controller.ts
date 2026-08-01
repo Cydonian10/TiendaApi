@@ -3,25 +3,24 @@ import { BaseProductsService } from '../services/base-products.service';
 
 @Controller('base-products')
 export class BaseProductsController {
+  constructor(private readonly baseProductsService: BaseProductsService) {}
 
-    constructor(private readonly baseProductsService: BaseProductsService) { }
+  @Post()
+  create() {}
 
-    @Post()
-    create() { }
+  @Get()
+  findAll() {
+    return {
+      message: 'This action returns all base products',
+    };
+  }
 
-    @Get()
-    findAll() {
-        return {
-            message: "This action returns all base products"
-        }
-    }
+  @Get(':id')
+  findOne() {}
 
-    @Get(':id')
-    findOne() { }
+  @Patch(':id')
+  update() {}
 
-    @Patch(':id')
-    update() { }
-
-    @Delete(':id')
-    remove() { }
+  @Delete(':id')
+  remove() {}
 }

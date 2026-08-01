@@ -22,20 +22,20 @@ const isProduction = process.env.NODE_ENV === 'production';
         ...(isProduction
           ? {}
           : {
-            transport: {
-              target: 'pino-pretty',
-              options: {
-                colorize: true,
-                singleLine: true,
-                levelFirst: true,
-                translateTime: 'SYS:dd/mm/yyyy, HH:MM:ss',
-                ignore: 'pid,hostname,context',
-                messageFormat: '{if context}{context} - {end}{msg}',
+              transport: {
+                target: 'pino-pretty',
+                options: {
+                  colorize: true,
+                  singleLine: true,
+                  levelFirst: true,
+                  translateTime: 'SYS:dd/mm/yyyy, HH:MM:ss',
+                  ignore: 'pid,hostname,context',
+                  messageFormat: '{if context}{context} - {end}{msg}',
+                },
               },
-            },
-          }),
+            }),
       },
     }),
   ],
 })
-export class LoggerModule { }
+export class LoggerModule {}
