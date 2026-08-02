@@ -11,4 +11,6 @@ export class BaseProduct {
 
   @OneToMany(() => Product, (product) => product.baseProduct)
   products: Product[];
+
+  productCount?: number;
 }
