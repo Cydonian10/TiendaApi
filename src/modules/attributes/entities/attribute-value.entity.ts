@@ -2,6 +2,7 @@ import {
   Column,
   Entity,
   Index,
+  JoinColumn,
   ManyToOne,
   PrimaryGeneratedColumn,
 } from 'typeorm';
@@ -18,8 +19,12 @@ export class AttributeValue {
   @Column({ type: 'varchar', length: 255 })
   value: string;
 
+  @Column({ name: 'attributeId', type: 'int' })
+  attributeId: number;
+
   @ManyToOne(() => Attribute, (attribute) => attribute.values, {
     nullable: false,
   })
+  @JoinColumn({ name: 'attributeId' })
   attribute: Attribute;
 }
