@@ -15,9 +15,7 @@
     "sourceMap": true,
     "outDir": "./dist",
     "paths": {
-      "@/*": [
-        "./src/*"
-      ]
+      "@/*": ["./src/*"]
     },
     "incremental": true,
     "forceConsistentCasingInFileNames": true,
