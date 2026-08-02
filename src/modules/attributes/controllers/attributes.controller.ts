@@ -46,6 +46,11 @@ export class AttributesController {
     return attribute;
   }
 
+  @Get('batch')
+  findAllWithValues(@Query() filter: AttributeFilterDto) {
+    return this.attributesBatchService.findAllWithValues(filter);
+  }
+
   @Get()
   findAll(@Query() filter: AttributeFilterDto) {
     return this.attributesService.findAll(filter);
