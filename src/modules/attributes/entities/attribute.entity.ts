@@ -1,7 +1,14 @@
-import { Column, Entity, OneToMany, PrimaryGeneratedColumn } from 'typeorm';
+import {
+  Column,
+  Entity,
+  Index,
+  OneToMany,
+  PrimaryGeneratedColumn,
+} from 'typeorm';
 import { AttributeValue } from './attribute-value.entity';
 
 @Entity('attribute')
+@Index('UQ_attribute_name', ['name'], { unique: true })
 export class Attribute {
   @PrimaryGeneratedColumn()
   id: number;
