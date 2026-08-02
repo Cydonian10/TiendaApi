@@ -8,8 +8,8 @@ API NestJS 11 (Postgres + TypeORM, logging con pino). Las features viven en `src
 - `npm run build` — compila a `dist/` (lo borra antes). Buen typecheck de saneamiento; `npx tsc --noEmit` también funciona.
 - `npm run lint` — ESLint con tipos (`recommendedTypeChecked`) y **ejecuta `--fix`** (muta archivos)
 - `npm run format` — Prettier (`singleQuote`, `trailingComma: all`)
-- `npm test` — tests unitarios Jest (`*.spec.ts`, rootDir `src`)
-- `npm run test:e2e` — tests e2e (`*.e2e-spec.ts`)
+- `npm test` — tests unitarios Jest (`test/unit/**/*.spec.ts`, config en `package.json`)
+- `npm run test:e2e` — tests e2e (`test/e2e/*.e2e-spec.ts`, config en `test/jest-e2e.json`)
 
 ## Base de datos (la parte no obvia)
 
@@ -69,7 +69,7 @@ Patrón usado: `@InjectRepository(Entity)` en el service + `TypeOrmModule.forFea
 
 ## Gotchas
 
-- El alias de rutas `@/*` → `./src/*` funciona en la app y en el CLI de migraciones (tsconfig-paths), pero **Jest no tiene `moduleNameMapper`** — los archivos de test deben usar imports relativos o `@/` fallará en runtime.
+- El alias de rutas `@/*` → `./src/*` funciona en la app y en el CLI de migraciones (tsconfig-paths) **y en Jest** (configs de `package.json` y `test/jest-e2e.json` tienen `moduleNameMapper: { "^@/(.*)$": "<rootDir>/src/$1" }`). Los tests pueden usar `@/` o imports relativos.
 - El logging es `nestjs-pino`: transporte pino-pretty solo cuando `NODE_ENV !== 'production'` (prod = JSON plano). `main.ts` usa `bufferLogs` + `app.useLogger(app.get(Logger))`.
 - `npm run lint` reformatea código que se desvíe de Prettier (las entidades se escriben en comillas dobles / 4 espacios / sin punto y coma; tras un lint quedan en single quote).
 - El `README.md` es la plantilla upstream de Nest, no describe este repo.

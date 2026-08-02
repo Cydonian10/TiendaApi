@@ -2,6 +2,7 @@ import { Global, Module } from '@nestjs/common';
 import { ConfigModule, ConfigService } from '@nestjs/config';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { buildDataSourceOptions } from './database.config';
+import { UnitOfWork } from './unitOfWork';
 
 @Global()
 @Module({
@@ -17,6 +18,7 @@ import { buildDataSourceOptions } from './database.config';
       }),
     }),
   ],
-  exports: [TypeOrmModule],
+  providers: [UnitOfWork],
+  exports: [UnitOfWork, TypeOrmModule],
 })
 export class DatabaseModule {}
