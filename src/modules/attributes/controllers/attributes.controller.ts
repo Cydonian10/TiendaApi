@@ -8,13 +8,17 @@ import {
   Patch,
   Post,
   Query,
+  Res,
 } from '@nestjs/common';
+import type { Response } from 'express';
 import { ApiTags } from '@nestjs/swagger';
 import { AttributesService } from '../services/attributes.service';
 import { AttributeValuesService } from '../services/attribute-values.service';
+import { AttributesBatchService } from '../services/attributes-batch.service';
 import { AttributeFilterDto } from '../dtos/attribute/filter-attribute.dto';
 import { AttributeValueFilterDto } from '../dtos/attribute-value/filter-attribute-value.dto';
 import { CreateAttributeDto } from '../dtos/attribute/create-attribute.dto';
+import { CreateAttributeBatchDto } from '../dtos/attribute/create-attribute-batch.dto';
 import { UpdateAttributeDto } from '../dtos/attribute/update-attribute.dto';
 
 @ApiTags('Attributes')
@@ -23,11 +27,23 @@ export class AttributesController {
   constructor(
     private readonly attributesService: AttributesService,
     private readonly attributeValuesService: AttributeValuesService,
+    private readonly attributesBatchService: AttributesBatchService,
   ) {}
 
   @Post()
   create(@Body() dto: CreateAttributeDto) {
     return this.attributesService.create(dto);
+  }
+
+  @Post('batch')
+  async createWithValues(
+    @Body() dto: CreateAttributeBatchDto,
+    @Res({ passthrough: true }) res: Response,
+  ) {
+    const { attribute, created } =
+      await this.attributesBatchService.createWithValues(dto);
+    res.status(created ? 201 : 200);
+    return attribute;
   }
 
   @Get()
