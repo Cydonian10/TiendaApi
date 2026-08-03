@@ -142,7 +142,7 @@ Convenciones:
 3. Modificar `CreateProductDto` (sin `name`, con `price`, `@Min(0.01)` en stock/price); crear `UpdateProductDto` y `ProductFilterDto`.
 4. Crear DTOs de respuesta `ProductAttributeDto` y `ProductDto` con `fromEntity`.
 5. Implementar `ProductsService.create` con `UnitOfWork`: validar `baseProduct` (404), validación cruzada (400), computar nombre, insertar product + productAttributes (unique → 409).
-6. Implementar `findAll` con filtros (`search`, `baseProductId`, `minPrice`, `maxPrice`, `minStock`) + segunda consulta para relaciones + paginación.
+6. Implementar `findAll` con filtros (`search`, `minPrice`, `maxPrice`, `minStock`) + segunda consulta para relaciones + paginación.
 7. Implementar `findOne` (con relaciones), `update` (reemplazo de attributes + recomputo de nombre en transacción), `remove` (borra children antes que el product).
 8. Implementar `ProductsController` (CRUD bajo `/products`).
 9. `npm run build`, `npm run lint` y verificación manual contra la BD.

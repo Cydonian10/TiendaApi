@@ -1,17 +1,6 @@
 import { ApiProperty } from '@nestjs/swagger';
 import { ProductAttributeDto } from './product-attribute.dto';
-
-interface ProductWithRelations {
-  id: number;
-  name: string;
-  stock: string;
-  price: string;
-  baseProduct: { id: number; name: string };
-  productAttributes: {
-    attribute: { id: number; name: string };
-    attributeValue: { id: number; value: string };
-  }[];
-}
+import { Product } from '../../entities/producto.entity';
 
 export class ProductDto {
   @ApiProperty({ example: 1, description: 'ID del producto' })
@@ -38,7 +27,7 @@ export class ProductDto {
   @ApiProperty({ type: () => [ProductAttributeDto] })
   productAttributes: ProductAttributeDto[];
 
-  static fromEntity(product: ProductWithRelations): ProductDto {
+  static fromEntity(product: Product): ProductDto {
     const dto = new ProductDto();
     dto.id = product.id;
     dto.name = product.name;
