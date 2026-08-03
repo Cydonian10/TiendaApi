@@ -19,6 +19,9 @@ export class Product {
   @Column({ type: 'decimal', precision: 10, scale: 2, default: 0 })
   stock: string;
 
+  @Column({ type: 'decimal', precision: 10, scale: 2, default: 0 })
+  price: string;
+
   @ManyToOne(() => BaseProduct, (baseProduct) => baseProduct.products, {
     nullable: false,
   })

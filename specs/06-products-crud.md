@@ -1,6 +1,6 @@
 # SPEC 06 — CRUD de products con attributes, nombre computado y filtros
 
-> **Status:** Draft
+> **Status:** Aprobado
 > **Depends on:** SPEC 01, SPEC 02, SPEC 03, SPEC 05
 > **Date:** 2026-08-02
 > **Objective:** Implementar el CRUD de `product` con asignación de attribute values (validando que pertenezcan a su atributo), stock/price positivos, nombre computado a partir del base-product y sus attributes, y listado paginado con filtros (search, precio, stock).
@@ -36,8 +36,10 @@
 export class Product {
   @PrimaryGeneratedColumn() id: number;
   @Column({ type: 'varchar', length: 255 }) name: string; // computado
-  @Column({ type: 'decimal', precision: 10, scale: 2, default: 0 }) stock: string;
-  @Column({ type: 'decimal', precision: 10, scale: 2, default: 0 }) price: string; // nuevo
+  @Column({ type: 'decimal', precision: 10, scale: 2, default: 0 })
+  stock: string;
+  @Column({ type: 'decimal', precision: 10, scale: 2, default: 0 })
+  price: string; // nuevo
   @ManyToOne(() => BaseProduct, (bp) => bp.products, { nullable: false })
   baseProduct: BaseProduct;
   @OneToMany(() => ProductAttribute, (pa) => pa.product)
@@ -53,14 +55,24 @@ export class ProductAttributeItemDto {
 }
 
 export class CreateProductDto {
-  @IsNumber() @Type(() => Number) @Min(0.01)
-  @ApiProperty({ example: 10 }) stock: number;
-  @IsNumber() @Type(() => Number) @Min(0.01)
-  @ApiProperty({ example: 1.5 }) price: number;
-  @IsNumber() @Type(() => Number)
-  @ApiProperty({ example: 1 }) baseProductId: number;
-  @IsArray() @ArrayNotEmpty()
-  @ValidateNested({ each: true }) @Type(() => ProductAttributeItemDto)
+  @IsNumber()
+  @Type(() => Number)
+  @Min(0.01)
+  @ApiProperty({ example: 10 })
+  stock: number;
+  @IsNumber()
+  @Type(() => Number)
+  @Min(0.01)
+  @ApiProperty({ example: 1.5 })
+  price: number;
+  @IsNumber()
+  @Type(() => Number)
+  @ApiProperty({ example: 1 })
+  baseProductId: number;
+  @IsArray()
+  @ArrayNotEmpty()
+  @ValidateNested({ each: true })
+  @Type(() => ProductAttributeItemDto)
   @ApiProperty({ type: () => [ProductAttributeItemDto] })
   productAttributes: ProductAttributeItemDto[];
 }
@@ -71,10 +83,26 @@ export class CreateProductDto {
 // src/modules/products/dtos/product/filter-product.dto.ts
 export class ProductFilterDto extends PaginationDto {
   @IsOptional() @IsString() @ApiProperty({ required: false }) search?: string;
-  @IsOptional() @Type(() => Number) @IsInt() @ApiProperty({ required: false }) baseProductId?: number;
-  @IsOptional() @Type(() => Number) @Min(0) @ApiProperty({ required: false }) minPrice?: number;
-  @IsOptional() @Type(() => Number) @Min(0) @ApiProperty({ required: false }) maxPrice?: number;
-  @IsOptional() @Type(() => Number) @Min(0) @ApiProperty({ required: false }) minStock?: number;
+  @IsOptional()
+  @Type(() => Number)
+  @IsInt()
+  @ApiProperty({ required: false })
+  baseProductId?: number;
+  @IsOptional()
+  @Type(() => Number)
+  @Min(0)
+  @ApiProperty({ required: false })
+  minPrice?: number;
+  @IsOptional()
+  @Type(() => Number)
+  @Min(0)
+  @ApiProperty({ required: false })
+  maxPrice?: number;
+  @IsOptional()
+  @Type(() => Number)
+  @Min(0)
+  @ApiProperty({ required: false })
+  minStock?: number;
 }
 ```
 
@@ -90,8 +118,8 @@ export class ProductAttributeDto {
 export class ProductDto {
   @ApiProperty() id: number;
   @ApiProperty() name: string;
-  @ApiProperty() stock: number;       // parseFloat del decimal string
-  @ApiProperty() price: number;       // parseFloat
+  @ApiProperty() stock: number; // parseFloat del decimal string
+  @ApiProperty() price: number; // parseFloat
   @ApiProperty() baseProductId: number;
   @ApiProperty() baseProductName: string;
   @ApiProperty({ type: () => [ProductAttributeDto] })
@@ -153,12 +181,12 @@ Convenciones:
 
 ## Risks
 
-| Risk                                                            | Mitigation                                                          |
-| --------------------------------------------------------------- | ------------------------------------------------------------------ |
-| Join 1:N con `skip/take` duplica filas y rompe la paginación.   | `findAll` en dos consultas: paginar sobre `product` y cargar relaciones por ids. |
-| `product.name` computado no es único: dos productos pueden quedar con igual nombre. | Aceptado — la identidad es el `id`; el nombre es descriptivo. |
-| Duplicado de `attributeId` en el body depende del unique de BD. | Manejar `isUniqueViolation` → 409 dentro del `UnitOfWork`.         |
-| Cambiar `baseProductId` en PATCH recomputa el nombre.            | Recalcular `name` siempre tras guardar los attributes/baseProduct. |
+| Risk                                                                                | Mitigation                                                                       |
+| ----------------------------------------------------------------------------------- | -------------------------------------------------------------------------------- |
+| Join 1:N con `skip/take` duplica filas y rompe la paginación.                       | `findAll` en dos consultas: paginar sobre `product` y cargar relaciones por ids. |
+| `product.name` computado no es único: dos productos pueden quedar con igual nombre. | Aceptado — la identidad es el `id`; el nombre es descriptivo.                    |
+| Duplicado de `attributeId` en el body depende del unique de BD.                     | Manejar `isUniqueViolation` → 409 dentro del `UnitOfWork`.                       |
+| Cambiar `baseProductId` en PATCH recomputa el nombre.                               | Recalcular `name` siempre tras guardar los attributes/baseProduct.               |
 
 ## What is **not** in this spec
 

@@ -3,9 +3,8 @@ import { Type } from 'class-transformer';
 import {
   ArrayNotEmpty,
   IsArray,
-  IsNotEmpty,
   IsNumber,
-  IsString,
+  Min,
   ValidateNested,
 } from 'class-validator';
 
@@ -22,15 +21,17 @@ export class ProductAttributeItemDto {
 }
 
 export class CreateProductDto {
-  @IsString()
-  @IsNotEmpty()
-  @ApiProperty({ example: 'Tornillo', description: 'Nombre del producto' })
-  name: string;
+  @IsNumber()
+  @Type(() => Number)
+  @Min(0.01)
+  @ApiProperty({ example: 10, description: 'Stock del producto (mayor a 0)' })
+  stock: number;
 
   @IsNumber()
   @Type(() => Number)
-  @ApiProperty({ example: 10, description: 'Stock del producto' })
-  stock: number;
+  @Min(0.01)
+  @ApiProperty({ example: 1.5, description: 'Precio del producto (mayor a 0)' })
+  price: number;
 
   @IsNumber()
   @Type(() => Number)
