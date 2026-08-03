@@ -21,4 +21,13 @@ export class BaseProductDto {
     dto.productCount = bp.productCount ?? 0;
     return dto;
   }
+
+  static fromRow(row: unknown): BaseProductDto {
+    const r = row as { id?: unknown; name?: unknown; productCount?: unknown };
+    const dto = new BaseProductDto();
+    dto.id = Number(r.id);
+    dto.name = typeof r.name === 'string' ? r.name : '';
+    dto.productCount = Number(r.productCount ?? 0);
+    return dto;
+  }
 }

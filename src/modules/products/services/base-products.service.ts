@@ -26,17 +26,30 @@ export class BaseProductsService {
   async findAll(
     filter: BaseProductFilterDto,
   ): Promise<PaginatedResult<BaseProductDto>> {
-    const qb = this.baseProductRepository.createQueryBuilder('bp');
-    if (filter.search) {
-      qb.andWhere(`unaccent(LOWER(bp.name)) ILIKE unaccent(LOWER(:q))`, {
-        q: `%${filter.search}%`,
-      });
-    }
-    qb.loadRelationCountAndMap('bp.productCount', 'bp.products');
-    qb.skip((filter.page - 1) * filter.limit).take(filter.limit);
-    const [rows, total] = await qb.getManyAndCount();
+    const search = filter.search ?? null;
+    const rows = await this.baseProductRepository.manager.query<unknown[]>(
+      `SELECT bp.id AS id, bp.name AS name, COUNT(p.id)::int AS "productCount"
+       FROM base_product bp
+       LEFT JOIN product p ON p."baseProductId" = bp.id
+       WHERE ($1::text IS NULL OR unaccent(LOWER(bp.name)) ILIKE unaccent(LOWER('%' || $1 || '%')))
+       GROUP BY bp.id
+       ORDER BY bp.id ASC
+       LIMIT $2 OFFSET $3`,
+      [search, filter.limit, (filter.page - 1) * filter.limit],
+    );
+
+    console.log('rows', rows);
+
+    const totalRows = await this.baseProductRepository.manager.query<unknown[]>(
+      `SELECT COUNT(*)::int AS total
+       FROM base_product bp
+       WHERE ($1::text IS NULL OR unaccent(LOWER(bp.name)) ILIKE unaccent(LOWER('%' || $1 || '%')))`,
+      [search],
+    );
+    const total = Number((totalRows[0] as { total?: unknown })?.total ?? 0);
+
     return {
-      data: rows.map((row) => BaseProductDto.fromEntity(row)),
+      data: rows.map((row) => BaseProductDto.fromRow(row)),
       total,
       page: filter.page,
       limit: filter.limit,
@@ -45,15 +58,18 @@ export class BaseProductsService {
   }
 
   async findOne(id: number): Promise<BaseProductDto> {
-    const baseProduct = await this.baseProductRepository
-      .createQueryBuilder('bp')
-      .loadRelationCountAndMap('bp.productCount', 'bp.products')
-      .where('bp.id = :id', { id })
-      .getOne();
-    if (!baseProduct) {
+    const rows = await this.baseProductRepository.manager.query<unknown[]>(
+      `SELECT bp.id AS id, bp.name AS name, COUNT(p.id)::int AS "productCount"
+       FROM base_product bp
+       LEFT JOIN product p ON p."baseProductId" = bp.id
+       WHERE bp.id = $1
+       GROUP BY bp.id`,
+      [id],
+    );
+    if (rows.length === 0) {
       throw new NotFoundException(`BaseProduct ${id} no encontrado`);
     }
-    return BaseProductDto.fromEntity(baseProduct);
+    return BaseProductDto.fromRow(rows[0]);
   }
 
   async create(dto: CreateBaseProductDto): Promise<BaseProductDto> {
@@ -73,10 +89,7 @@ export class BaseProductsService {
     return BaseProductDto.fromEntity(baseProduct);
   }
 
-  async update(
-    id: number,
-    dto: UpdateBaseProductDto,
-  ): Promise<BaseProductDto> {
+  async update(id: number, dto: UpdateBaseProductDto): Promise<BaseProductDto> {
     const baseProduct = await this.baseProductRepository.findOneBy({ id });
     if (!baseProduct) {
       throw new NotFoundException(`BaseProduct ${id} no encontrado`);

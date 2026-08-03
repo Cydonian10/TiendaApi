@@ -1,26 +1,50 @@
-import { Controller, Delete, Get, Patch, Post } from '@nestjs/common';
+import {
+  Body,
+  Controller,
+  Delete,
+  Get,
+  Param,
+  ParseIntPipe,
+  Patch,
+  Post,
+  Query,
+} from '@nestjs/common';
+import { ApiTags } from '@nestjs/swagger';
 import { BaseProductsService } from '../services/base-products.service';
+import { BaseProductFilterDto } from '../dtos/base-product/filter-base-product.dto';
+import { CreateBaseProductDto } from '../dtos/base-product/create-base-product.dto';
+import { UpdateBaseProductDto } from '../dtos/base-product/update-base-product.dto';
 
+@ApiTags('Base Products')
 @Controller('base-products')
 export class BaseProductsController {
   constructor(private readonly baseProductsService: BaseProductsService) {}
 
   @Post()
-  create() {}
+  create(@Body() dto: CreateBaseProductDto) {
+    return this.baseProductsService.create(dto);
+  }
 
   @Get()
-  findAll() {
-    return {
-      message: 'This action returns all base products',
-    };
+  findAll(@Query() filter: BaseProductFilterDto) {
+    return this.baseProductsService.findAll(filter);
   }
 
   @Get(':id')
-  findOne() {}
+  findOne(@Param('id', ParseIntPipe) id: number) {
+    return this.baseProductsService.findOne(id);
+  }
 
   @Patch(':id')
-  update() {}
+  update(
+    @Param('id', ParseIntPipe) id: number,
+    @Body() dto: UpdateBaseProductDto,
+  ) {
+    return this.baseProductsService.update(id, dto);
+  }
 
   @Delete(':id')
-  remove() {}
+  remove(@Param('id', ParseIntPipe) id: number) {
+    return this.baseProductsService.remove(id);
+  }
 }
