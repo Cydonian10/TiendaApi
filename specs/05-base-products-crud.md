@@ -1,6 +1,6 @@
 # SPEC 05 — CRUD de base-products con paginación, filtro y borrado protegido
 
-> **Status:** Aprobado
+> **Status:** Implementado
 > **Depends on:** SPEC 01, SPEC 02
 > **Date:** 2026-08-02
 > **Objective:** Implementar el CRUD completo de `base_product` con paginación, filtro por nombre, conteo de productos por base-product y borrado protegido cuando tiene productos asociados.
