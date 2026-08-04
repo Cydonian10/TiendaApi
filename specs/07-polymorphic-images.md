@@ -1,6 +1,6 @@
 # SPEC 07 — Imágenes polimórficas con subida a disco y storage intercambiable
 
-> **Status:** Draft
+> **Status:** Aprobado
 > **Depends on:** SPEC 02, SPEC 06
 > **Date:** 2026-08-02
 > **Objective:** Crear el módulo de imágenes con subida multipart a disco local, tabla `image` con relación polimórfica (`entityType`/`entityId`), una imagen principal por entidad, y un `StorageService` intercambiable que permita migrar a Firebase/S3 sin cambiar el API.
@@ -128,12 +128,12 @@ Convenciones:
 
 ## Risks
 
-| Risk                                                              | Mitigation                                                             |
-| ----------------------------------------------------------------- | ---------------------------------------------------------------------- |
-| Archivo guardado en disco pero INSERT falla → huérfano.            | Borrar el archivo en el `catch` del service.                           |
-| Multer es dependencia transitiva de platform-express.             | Instalarla explícita (`multer` + `@types/multer`) para importarla con seguridad. |
-| Borrar un product deja imágenes huérfanas (SPEC 06).              | Documentado; limpieza en cascada como spec futuro.                    |
-| Servir `/uploads` estático puede exponer archivos no deseados.    | Solo se sirve la carpeta `uploads/`; control de acceso/auth queda para un spec futuro. |
+| Risk                                                           | Mitigation                                                                             |
+| -------------------------------------------------------------- | -------------------------------------------------------------------------------------- |
+| Archivo guardado en disco pero INSERT falla → huérfano.        | Borrar el archivo en el `catch` del service.                                           |
+| Multer es dependencia transitiva de platform-express.          | Instalarla explícita (`multer` + `@types/multer`) para importarla con seguridad.       |
+| Borrar un product deja imágenes huérfanas (SPEC 06).           | Documentado; limpieza en cascada como spec futuro.                                     |
+| Servir `/uploads` estático puede exponer archivos no deseados. | Solo se sirve la carpeta `uploads/`; control de acceso/auth queda para un spec futuro. |
 
 ## What is **not** in this spec
 

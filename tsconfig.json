@@ -20,6 +20,6 @@
     "incremental": true,
     "forceConsistentCasingInFileNames": true,
     "skipLibCheck": true,
-    "types": ["node", "jest"]
+    "types": ["node", "jest", "multer"]
   }
 }
