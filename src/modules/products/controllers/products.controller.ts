@@ -1,22 +1,47 @@
-import { Controller, Delete, Get, Patch, Post } from '@nestjs/common';
+import {
+  Body,
+  Controller,
+  Delete,
+  Get,
+  Param,
+  ParseIntPipe,
+  Patch,
+  Post,
+  Query,
+} from '@nestjs/common';
+import { ApiTags } from '@nestjs/swagger';
 import { ProductsService } from '../services/products.service';
+import { CreateProductDto } from '../dtos/product/create-product.dto';
+import { UpdateProductDto } from '../dtos/product/update-product.dto';
+import { ProductFilterDto } from '../dtos/product/filter-product.dto';
 
+@ApiTags('Products')
 @Controller('products')
 export class ProductsController {
   constructor(private readonly productsService: ProductsService) {}
 
   @Post()
-  create() {}
+  create(@Body() dto: CreateProductDto) {
+    return this.productsService.create(dto);
+  }
 
   @Get()
-  findAll() {}
+  findAll(@Query() filter: ProductFilterDto) {
+    return this.productsService.findAll(filter);
+  }
 
   @Get(':id')
-  findOne() {}
+  findOne(@Param('id', ParseIntPipe) id: number) {
+    return this.productsService.findOne(id);
+  }
 
   @Patch(':id')
-  update() {}
+  update(@Param('id', ParseIntPipe) id: number, @Body() dto: UpdateProductDto) {
+    return this.productsService.update(id, dto);
+  }
 
   @Delete(':id')
-  remove() {}
+  remove(@Param('id', ParseIntPipe) id: number) {
+    return this.productsService.remove(id);
+  }
 }

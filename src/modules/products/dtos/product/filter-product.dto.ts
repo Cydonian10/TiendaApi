@@ -15,6 +15,12 @@ export class ProductFilterDto extends PaginationDto {
 
   @IsOptional()
   @Type(() => Number)
+  @IsInt()
+  @ApiPropertyOptional({ example: 1, description: 'Filtra por producto base' })
+  baseProductId?: number;
+
+  @IsOptional()
+  @Type(() => Number)
   @Min(0)
   @ApiPropertyOptional({
     example: 1.0,
