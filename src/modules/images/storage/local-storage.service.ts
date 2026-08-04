@@ -7,16 +7,17 @@ const UPLOADS_DIR = join(process.cwd(), 'uploads');
 
 @Injectable()
 export class LocalStorageService implements StorageService {
-  async save(file: Express.Multer.File): Promise<string> {
-    return `/uploads/${file.filename}`;
+  save(file: Express.Multer.File): Promise<string> {
+    return Promise.resolve(`/uploads/${file.filename}`);
   }
 
-  async remove(url: string): Promise<void> {
+  remove(url: string): Promise<void> {
     const filename = url.split('/').pop();
-    if (!filename) return;
+    if (!filename) return Promise.resolve();
     const filePath = join(UPLOADS_DIR, filename);
     if (existsSync(filePath)) {
       unlinkSync(filePath);
     }
+    return Promise.resolve();
   }
 }

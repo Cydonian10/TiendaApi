@@ -1,6 +1,6 @@
 # SPEC 07 — Imágenes polimórficas con subida a disco y storage intercambiable
 
-> **Status:** Aprobado
+> **Status:** Implementado
 > **Depends on:** SPEC 02, SPEC 06
 > **Date:** 2026-08-02
 > **Objective:** Crear el módulo de imágenes con subida multipart a disco local, tabla `image` con relación polimórfica (`entityType`/`entityId`), una imagen principal por entidad, y un `StorageService` intercambiable que permita migrar a Firebase/S3 sin cambiar el API.
@@ -103,16 +103,16 @@ Convenciones:
 
 ## Acceptance criteria
 
-- [ ] `POST /images` con un jpeg/png/webp válido responde **201** con `ImageDto`; la primera imagen de la entidad queda con `isMain: true`.
-- [ ] Archivo ausente → **400**; formato no permitido → **400**; archivo > 5 MB → **400**.
-- [ ] `entityType` distinto de `'product'` → **400**; `entityId` de un product inexistente → **404**.
-- [ ] `GET /images?entityType=product&entityId=N` devuelve las imágenes de la entidad (principal primero, sin paginar).
-- [ ] `PATCH /images/:id` con `{ isMain: true }` marca esa imagen y desmarca las otras de la misma entidad; id inexistente → **404**.
-- [ ] `DELETE /images/:id` borra el registro y el archivo del disco; id inexistente → **404**.
-- [ ] `GET /uploads/<file>` sirve el archivo (HTTP 200).
-- [ ] En BD existe `image` con índice `(entityType, entityId)` y unique parcial `WHERE is_main` (una sola principal por entidad).
-- [ ] `npm run build` compila sin errores de tipos.
-- [ ] `npm run lint` pasa sin errores.
+- [x] `POST /images` con un jpeg/png/webp válido responde **201** con `ImageDto`; la primera imagen de la entidad queda con `isMain: true`.
+- [x] Archivo ausente → **400**; formato no permitido → **400**; archivo > 5 MB → **400**.
+- [x] `entityType` distinto de `'product'` → **400**; `entityId` de un product inexistente → **404**.
+- [x] `GET /images?entityType=product&entityId=N` devuelve las imágenes de la entidad (principal primero, sin paginar).
+- [x] `PATCH /images/:id` con `{ isMain: true }` marca esa imagen y desmarca las otras de la misma entidad; id inexistente → **404**.
+- [x] `DELETE /images/:id` borra el registro y el archivo del disco; id inexistente → **404**.
+- [x] `GET /uploads/<file>` sirve el archivo (HTTP 200).
+- [x] En BD existe `image` con índice `(entityType, entityId)` y unique parcial `WHERE is_main` (una sola principal por entidad).
+- [x] `npm run build` compila sin errores de tipos.
+- [x] `npm run lint` pasa sin errores.
 
 ## Decisions
 
