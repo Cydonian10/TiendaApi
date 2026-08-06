@@ -1,6 +1,8 @@
-import { Column, Entity, PrimaryGeneratedColumn } from 'typeorm';
+import { Column, Entity, Index, PrimaryGeneratedColumn } from 'typeorm';
 
 @Entity('measurement-unit')
+@Index('UQ_measurement_unit_name', ['name'], { unique: true })
+@Index('UQ_measurement_unit_value', ['value'], { unique: true })
 export class MeasurementUnit {
   @PrimaryGeneratedColumn()
   id: number;

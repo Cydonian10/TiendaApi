@@ -12,6 +12,10 @@ import { BaseProduct } from '@/modules/products/entities/base-product.entity';
 @Index('UQ_product_unit_productId_unitId', ['baseProduct', 'unit'], {
   unique: true,
 })
+@Index('UQ_product_unit_productId_isMain', ['baseProduct'], {
+  unique: true,
+  where: '"isMain"',
+})
 export class BaseProductUnit {
   @PrimaryGeneratedColumn()
   id: number;
