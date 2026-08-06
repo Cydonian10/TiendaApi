@@ -9,6 +9,7 @@ import { LoggerModule } from './logger/logger.module';
 import { ProductsModule } from './modules/products/products.module';
 import { AttributesModule } from './modules/attributes/attributes.module';
 import { ImagesModule } from './modules/images/images.module';
+import { MeasurementUnitsModule } from './modules/measurement-units/measurement-units.module';
 
 @Module({
   imports: [
@@ -18,6 +19,7 @@ import { ImagesModule } from './modules/images/images.module';
     ProductsModule,
     AttributesModule,
     ImagesModule,
+    MeasurementUnitsModule,
   ],
   controllers: [AppController],
   providers: [
