@@ -6,11 +6,14 @@ import {
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { BaseProduct } from '../entities/base-product.entity';
+import { BaseProductUnit } from '../../measurement-units/entities/baseProduct-unit.entity';
+import { MeasurementUnit } from '../../measurement-units/entities/measurement-unit.entity';
 import { BaseProductDto } from '../dtos/base-product/base-product.dto';
 import { BaseProductFilterDto } from '../dtos/base-product/filter-base-product.dto';
 import { CreateBaseProductDto } from '../dtos/base-product/create-base-product.dto';
 import { UpdateBaseProductDto } from '../dtos/base-product/update-base-product.dto';
 import { PaginatedResult } from '@/common/interfaces/paginated-result';
+import { UnitOfWork } from '@/database/unitOfWork';
 import {
   isForeignKeyViolation,
   isUniqueViolation,
@@ -21,6 +24,7 @@ export class BaseProductsService {
   constructor(
     @InjectRepository(BaseProduct)
     private readonly baseProductRepository: Repository<BaseProduct>,
+    private readonly unitOfWork: UnitOfWork,
   ) {}
 
   async findAll(
@@ -73,20 +77,54 @@ export class BaseProductsService {
   }
 
   async create(dto: CreateBaseProductDto): Promise<BaseProductDto> {
-    const baseProduct = this.baseProductRepository.create({
-      name: dto.name,
-    });
-    try {
-      await this.baseProductRepository.save(baseProduct);
-    } catch (e) {
-      if (isUniqueViolation(e)) {
-        throw new ConflictException(
-          `Ya existe un producto base con el nombre "${dto.name}"`,
-        );
+    return this.unitOfWork.execute(async (queryRunner) => {
+      const manager = queryRunner.manager;
+      const baseProduct = manager.create(BaseProduct, { name: dto.name });
+      try {
+        await manager.save(baseProduct);
+      } catch (e) {
+        if (isUniqueViolation(e)) {
+          throw new ConflictException(
+            `Ya existe un producto base con el nombre "${dto.name}"`,
+          );
+        }
+        throw e;
       }
-      throw e;
-    }
-    return BaseProductDto.fromEntity(baseProduct);
+
+      for (const item of dto.units) {
+        const unit = await manager.findOneBy(MeasurementUnit, {
+          id: item.unitId,
+        });
+        if (!unit) {
+          throw new NotFoundException(
+            `MeasurementUnit ${item.unitId} no encontrada`,
+          );
+        }
+      }
+
+      try {
+        await manager.save(
+          BaseProductUnit,
+          dto.units.map((item) =>
+            manager.create(BaseProductUnit, {
+              baseProduct,
+              unit: { id: item.unitId },
+              factor: item.factor.toFixed(2),
+              isMain: item.isMain,
+            }),
+          ),
+        );
+      } catch (e) {
+        if (isUniqueViolation(e)) {
+          throw new ConflictException(
+            `Ya existe una unidad del producto base asociada a esa unidad de medida`,
+          );
+        }
+        throw e;
+      }
+
+      return BaseProductDto.fromEntity(baseProduct);
+    });
   }
 
   async update(id: number, dto: UpdateBaseProductDto): Promise<BaseProductDto> {

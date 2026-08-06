@@ -124,7 +124,7 @@ export class ProductsService {
         ? await this.productRepository.find({
             where: { id: In(ids) },
             relations: {
-              baseProduct: true,
+              baseProduct: { units: { unit: true } },
               productAttributes: { attribute: true, attributeValue: true },
             },
             order: { id: 'ASC' },
@@ -144,7 +144,7 @@ export class ProductsService {
     const product = await this.productRepository.findOne({
       where: { id },
       relations: {
-        baseProduct: true,
+        baseProduct: { units: { unit: true } },
         productAttributes: { attribute: true, attributeValue: true },
       },
     });
@@ -319,7 +319,7 @@ export class ProductsService {
     const loaded = await manager.findOne(Product, {
       where: { id },
       relations: {
-        baseProduct: true,
+        baseProduct: { units: { unit: true } },
         productAttributes: { attribute: true, attributeValue: true },
       },
     });
