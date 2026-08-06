@@ -8,11 +8,11 @@ import {
 import { MeasurementUnit } from './measurement-unit.entity';
 import { BaseProduct } from '@/modules/products/entities/base-product.entity';
 
-@Entity('product-unit')
+@Entity('base-product-unit')
 @Index('UQ_product_unit_productId_unitId', ['baseProduct', 'unit'], {
   unique: true,
 })
-export class ProductUnit {
+export class BaseProductUnit {
   @PrimaryGeneratedColumn()
   id: number;
 
