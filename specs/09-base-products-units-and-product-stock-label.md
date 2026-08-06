@@ -1,6 +1,6 @@
 # SPEC 09 — Unidades en el create de base-product y `stockLabel` en productos
 
-> **Status:** Aprobado
+> **Status:** Implementado
 > **Depends on:** SPEC 02 (response/pagination/filter), SPEC 05 (base-products), SPEC 06 (products), SPEC 08 (measurement-units)
 > **Date:** 2026-08-06
 > **Objective:** Permitir crear un base-product junto con sus unidades en un solo `POST /base-products` (array `units` obligatorio con validaciones), y al listar/detallar productos exponer su `stockLabel` ("10 kg") construido con la abreviatura de la unidad principal (`isMain`) del base-product, además del array completo de unidades.
@@ -152,17 +152,17 @@ No se toca `ProductsModule` (las entidades `MeasurementUnit`/`BaseProductUnit` y
 
 ## Acceptance criteria
 
-- [ ] `POST /base-products { name, units: [{ unitId, factor, isMain }] }` → **201** y crea el base-product + sus filas `base-product-unit` (incluida la `isMain`).
-- [ ] `units` omitido o vacío → **400**.
-- [ ] Exactamente 0 o 2+ items con `isMain: true` → **400**.
-- [ ] `unitId` repetido en el array → **409**; `unitId` inexistente → **404** (y el base-product **no** queda creado — rollback).
-- [ ] `factor` omitido o `<= 0` → **400**.
-- [ ] `name` duplicado → **409** sin insertar unidades.
-- [ ] `GET /products` devuelve en cada producto `stockLabel` ("10 kg") y `units` (array con `unitId/unitName/unitValue/isMain/factor`).
-- [ ] Producto cuyo base-product no tiene unidad principal → `stockLabel: null` y `units: []`.
-- [ ] `GET /products/:id` expone los mismos campos nuevos.
-- [ ] `POST /base-products/:id/units`, `PATCH ...`, `DELETE ...` del spec 08 siguen funcionando sin cambios.
-- [ ] `npm run build` compila sin errores; `npm run lint` pasa.
+- [x] `POST /base-products { name, units: [{ unitId, factor, isMain }] }` → **201** y crea el base-product + sus filas `base-product-unit` (incluida la `isMain`).
+- [x] `units` omitido o vacío → **400**.
+- [x] Exactamente 0 o 2+ items con `isMain: true` → **400**.
+- [x] `unitId` repetido en el array → **409**; `unitId` inexistente → **404** (y el base-product **no** queda creado — rollback).
+- [x] `factor` omitido o `<= 0` → **400**.
+- [x] `name` duplicado → **409** sin insertar unidades.
+- [x] `GET /products` devuelve en cada producto `stockLabel` ("10 kg") y `units` (array con `unitId/unitName/unitValue/isMain/factor`).
+- [x] Producto cuyo base-product no tiene unidad principal → `stockLabel: null` y `units: []`.
+- [x] `GET /products/:id` expone los mismos campos nuevos.
+- [x] `POST /base-products/:id/units`, `PATCH ...`, `DELETE ...` del spec 08 siguen funcionando sin cambios.
+- [x] `npm run build` compila sin errores; `npm run lint` pasa.
 
 ## Decisions
 
