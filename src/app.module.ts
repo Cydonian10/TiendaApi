@@ -8,6 +8,7 @@ import { DatabaseModule } from './database/database.module';
 import { LoggerModule } from './logger/logger.module';
 import { ProductsModule } from './modules/products/products.module';
 import { AttributesModule } from './modules/attributes/attributes.module';
+import { ImagesModule } from './modules/images/images.module';
 
 @Module({
   imports: [
@@ -16,6 +17,7 @@ import { AttributesModule } from './modules/attributes/attributes.module';
     DatabaseModule,
     ProductsModule,
     AttributesModule,
+    ImagesModule,
   ],
   controllers: [AppController],
   providers: [

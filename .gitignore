@@ -17,6 +17,8 @@
 .idea/**/dynamic.xml
 .idea/**/uiDesigner.xml
 
+uploads/
+
 # Gradle:
 .idea/**/gradle.xml
 .idea/**/libraries
