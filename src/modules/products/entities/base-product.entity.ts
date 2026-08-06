@@ -1,5 +1,11 @@
-import { Column, Entity, OneToMany, PrimaryGeneratedColumn } from 'typeorm';
+import {
+  Column,
+  Entity,
+  OneToMany,
+  PrimaryGeneratedColumn,
+} from 'typeorm';
 import { Product } from './producto.entity';
+import { BaseProductUnit } from '../../measurement-units/entities/baseProduct-unit.entity';
 
 @Entity('base_product')
 export class BaseProduct {
@@ -11,6 +17,9 @@ export class BaseProduct {
 
   @OneToMany(() => Product, (product) => product.baseProduct)
   products: Product[];
+
+  @OneToMany(() => BaseProductUnit, (bpu) => bpu.baseProduct)
+  units: BaseProductUnit[];
 
   productCount?: number;
 }

@@ -1,5 +1,6 @@
 import { ApiProperty } from '@nestjs/swagger';
 import { ProductAttributeDto } from './product-attribute.dto';
+import { ProductUnitDto } from '../../../measurement-units/dtos/product-unit/product-unit.dto';
 import { Product } from '../../entities/producto.entity';
 
 export class ProductDto {
@@ -27,6 +28,20 @@ export class ProductDto {
   @ApiProperty({ type: () => [ProductAttributeDto] })
   productAttributes: ProductAttributeDto[];
 
+  @ApiProperty({
+    example: '10 kg',
+    nullable: true,
+    description:
+      'Stock formateado con la abreviatura de la unidad principal del base-product (null si no hay principal)',
+  })
+  stockLabel: string | null;
+
+  @ApiProperty({
+    type: () => [ProductUnitDto],
+    description: 'Unidades del base-product del producto',
+  })
+  units: ProductUnitDto[];
+
   static fromEntity(product: Product): ProductDto {
     const dto = new ProductDto();
     dto.id = product.id;
@@ -38,6 +53,12 @@ export class ProductDto {
     dto.productAttributes = product.productAttributes.map((pa) =>
       ProductAttributeDto.fromEntity(pa),
     );
+    const units = product.baseProduct.units ?? [];
+    const main = units.find((u) => u.isMain);
+    dto.stockLabel = main
+      ? `${parseFloat(product.stock)} ${main.unit.value}`
+      : null;
+    dto.units = units.map((u) => ProductUnitDto.fromEntity(u));
     return dto;
   }
 }
