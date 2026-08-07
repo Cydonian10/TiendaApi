@@ -6,12 +6,15 @@ import {
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { BaseProduct } from '../entities/base-product.entity';
+import { Product } from '../entities/producto.entity';
 import { BaseProductUnit } from '../../measurement-units/entities/baseProduct-unit.entity';
 import { MeasurementUnit } from '../../measurement-units/entities/measurement-unit.entity';
 import { BaseProductDto } from '../dtos/base-product/base-product.dto';
 import { BaseProductFilterDto } from '../dtos/base-product/filter-base-product.dto';
 import { CreateBaseProductDto } from '../dtos/base-product/create-base-product.dto';
+import { CreateBaseProductResponseDto } from '../dtos/base-product/create-base-product-response.dto';
 import { UpdateBaseProductDto } from '../dtos/base-product/update-base-product.dto';
+import { ProductDto } from '../dtos/product/product.dto';
 import { PaginatedResult } from '@/common/interfaces/paginated-result';
 import { UnitOfWork } from '@/database/unitOfWork';
 import {
@@ -76,7 +79,9 @@ export class BaseProductsService {
     return BaseProductDto.fromRow(rows[0]);
   }
 
-  async create(dto: CreateBaseProductDto): Promise<BaseProductDto> {
+  async create(
+    dto: CreateBaseProductDto,
+  ): Promise<CreateBaseProductResponseDto> {
     return this.unitOfWork.execute(async (queryRunner) => {
       const manager = queryRunner.manager;
       const baseProduct = manager.create(BaseProduct, { name: dto.name });
@@ -123,7 +128,31 @@ export class BaseProductsService {
         throw e;
       }
 
-      return BaseProductDto.fromEntity(baseProduct);
+      const product = manager.create(Product, {
+        name: baseProduct.name,
+        stock: '0.00',
+        price: '0.00',
+        attributeKey: '',
+        baseProduct,
+      });
+      await manager.save(product);
+
+      const loadedProduct = await manager.findOne(Product, {
+        where: { id: product.id },
+        relations: {
+          baseProduct: { units: { unit: true } },
+          productAttributes: { attribute: true, attributeValue: true },
+        },
+      });
+      if (!loadedProduct) {
+        throw new NotFoundException(`Product ${product.id} no encontrado`);
+      }
+
+      baseProduct.productCount = 1;
+      return {
+        baseProduct: BaseProductDto.fromEntity(baseProduct),
+        defaultProduct: ProductDto.fromEntity(loadedProduct),
+      };
     });
   }
 
