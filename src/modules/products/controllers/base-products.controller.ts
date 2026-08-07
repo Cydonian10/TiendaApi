@@ -13,6 +13,7 @@ import { ApiTags } from '@nestjs/swagger';
 import { BaseProductsService } from '../services/base-products.service';
 import { BaseProductFilterDto } from '../dtos/base-product/filter-base-product.dto';
 import { CreateBaseProductDto } from '../dtos/base-product/create-base-product.dto';
+import { CreateBaseProductResponseDto } from '../dtos/base-product/create-base-product-response.dto';
 import { UpdateBaseProductDto } from '../dtos/base-product/update-base-product.dto';
 
 @ApiTags('Base Products')
@@ -21,7 +22,9 @@ export class BaseProductsController {
   constructor(private readonly baseProductsService: BaseProductsService) {}
 
   @Post()
-  create(@Body() dto: CreateBaseProductDto) {
+  create(
+    @Body() dto: CreateBaseProductDto,
+  ): Promise<CreateBaseProductResponseDto> {
     return this.baseProductsService.create(dto);
   }
 
