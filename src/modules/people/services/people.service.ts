@@ -6,7 +6,7 @@ import {
 import { InjectRepository } from '@nestjs/typeorm';
 import { EntityManager, In, Repository } from 'typeorm';
 import { Person } from '../entities/person.entity';
-import { Role } from '../entities/role.entity';
+import { Role } from '@/modules/roles/entities/role.entity';
 import { PersonDto } from '../dtos/person/person.dto';
 import { CreatePersonDto } from '../dtos/person/create-person.dto';
 import { UpdatePersonDto } from '../dtos/person/update-person.dto';

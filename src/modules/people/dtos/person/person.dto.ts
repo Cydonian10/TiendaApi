@@ -1,5 +1,5 @@
 import { ApiProperty } from '@nestjs/swagger';
-import { RoleDto } from '../role/role.dto';
+import { RoleDto } from '@/modules/roles/dtos/role/role.dto';
 
 export class PersonDto {
   @ApiProperty({ example: 1, description: 'ID de la persona' })
