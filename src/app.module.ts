@@ -10,6 +10,8 @@ import { ProductsModule } from './modules/products/products.module';
 import { AttributesModule } from './modules/attributes/attributes.module';
 import { ImagesModule } from './modules/images/images.module';
 import { MeasurementUnitsModule } from './modules/measurement-units/measurement-units.module';
+import { PeopleModule } from './modules/people/people.module';
+import { RolesModule } from './modules/roles/roles.module';
 
 @Module({
   imports: [
@@ -20,6 +22,8 @@ import { MeasurementUnitsModule } from './modules/measurement-units/measurement-
     AttributesModule,
     ImagesModule,
     MeasurementUnitsModule,
+    PeopleModule,
+    RolesModule,
   ],
   controllers: [AppController],
   providers: [
