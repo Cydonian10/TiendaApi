@@ -4,10 +4,12 @@ import {
   ArrayUnique,
   IsArray,
   IsDateString,
+  IsEmail,
   IsInt,
   IsNotEmpty,
   IsOptional,
   IsString,
+  MinLength,
 } from 'class-validator';
 
 export class CreatePersonDto {
@@ -45,4 +47,22 @@ export class CreatePersonDto {
     description: 'IDs de roles a asignar',
   })
   roleIds?: number[];
+
+  @IsOptional()
+  @IsEmail()
+  @ApiPropertyOptional({
+    example: 'juan@correo.com',
+    description: 'Email (obligatorio si el rol es TRABAJADOR o ADMINISTRADOR)',
+  })
+  email?: string;
+
+  @IsOptional()
+  @IsString()
+  @MinLength(6)
+  @ApiPropertyOptional({
+    example: 'secret123',
+    description:
+      'Password (obligatorio si el rol es TRABAJADOR o ADMINISTRADOR)',
+  })
+  password?: string;
 }

@@ -26,6 +26,15 @@ export class PersonDto {
   @ApiProperty({ type: () => [RoleDto] })
   roles: RoleDto[];
 
+  @ApiProperty({ example: false, description: 'Tiene registro de auth' })
+  hasAuth: boolean;
+
+  @ApiProperty({
+    example: { id: 1, email: 'admin@correo.com', google: false },
+    description: 'Registro de auth asociado (null si no tiene)',
+  })
+  auth: { id: number; email: string; google: boolean } | null;
+
   static fromEntity(person: {
     id: number;
     firstName: string;
@@ -34,6 +43,11 @@ export class PersonDto {
     address: string;
     dni: string;
     roles: { id: number; name: string }[];
+    auth?: {
+      id: number;
+      email: string;
+      google: boolean;
+    } | null;
   }): PersonDto {
     const dto = new PersonDto();
     dto.id = person.id;
@@ -51,6 +65,14 @@ export class PersonDto {
       rd.name = r.name;
       return rd;
     });
+    dto.hasAuth = person.auth != null;
+    dto.auth = person.auth
+      ? {
+          id: person.auth.id,
+          email: person.auth.email,
+          google: person.auth.google,
+        }
+      : null;
     return dto;
   }
 }

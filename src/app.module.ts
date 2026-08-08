@@ -12,6 +12,7 @@ import { ImagesModule } from './modules/images/images.module';
 import { MeasurementUnitsModule } from './modules/measurement-units/measurement-units.module';
 import { PeopleModule } from './modules/people/people.module';
 import { RolesModule } from './modules/roles/roles.module';
+import { AuthModule } from './modules/auth/auth.module';
 
 @Module({
   imports: [
@@ -24,6 +25,7 @@ import { RolesModule } from './modules/roles/roles.module';
     MeasurementUnitsModule,
     PeopleModule,
     RolesModule,
+    AuthModule,
   ],
   controllers: [AppController],
   providers: [

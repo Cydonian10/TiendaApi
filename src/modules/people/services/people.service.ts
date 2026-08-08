@@ -1,4 +1,5 @@
 import {
+  BadRequestException,
   ConflictException,
   Injectable,
   NotFoundException,
@@ -7,6 +8,7 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { EntityManager, In, Repository } from 'typeorm';
 import { Person } from '../entities/person.entity';
 import { Role } from '@/modules/roles/entities/role.entity';
+import { Auth } from '@/modules/auth/entities/auth.entity';
 import { PersonDto } from '../dtos/person/person.dto';
 import { CreatePersonDto } from '../dtos/person/create-person.dto';
 import { UpdatePersonDto } from '../dtos/person/update-person.dto';
@@ -14,6 +16,9 @@ import { FilterPersonDto } from '../dtos/person/filter-person.dto';
 import { PaginatedResult } from '@/common/interfaces/paginated-result';
 import { UnitOfWork } from '@/database/unitOfWork';
 import { isUniqueViolation } from '@/common/utils/pg-errors';
+import { hashPassword } from '@/common/utils/password';
+
+const STAFF_ROLES = ['TRABAJADOR', 'ADMINISTRADOR'];
 
 @Injectable()
 export class PeopleService {
@@ -27,6 +32,13 @@ export class PeopleService {
     return this.unitOfWork.execute(async (queryRunner) => {
       const manager = queryRunner.manager;
       const roles = await this.loadRolesOrThrow(manager, dto.roleIds);
+      const isStaff = this.hasStaffRole(roles);
+
+      if (isStaff && (!dto.email || !dto.password)) {
+        throw new BadRequestException(
+          'Email y password son obligatorios para roles TRABAJADOR o ADMINISTRADOR',
+        );
+      }
 
       const person = manager.create(Person, {
         firstName: dto.firstName,
@@ -49,6 +61,10 @@ export class PeopleService {
         throw e;
       }
 
+      if (isStaff) {
+        await this.createAuth(manager, saved.id, dto.email, dto.password);
+      }
+
       return this.loadPersonDto(manager, saved.id);
     });
   }
@@ -57,12 +73,17 @@ export class PeopleService {
     const qb = this.personRepository
       .createQueryBuilder('p')
       .leftJoinAndSelect('p.roles', 'r')
+      .leftJoinAndSelect('p.auth', 'a')
       .orderBy('p.id', 'ASC')
       .skip((filter.page - 1) * filter.limit)
       .take(filter.limit);
 
     if (filter.roleName) {
       qb.andWhere('r.name = :roleName', { roleName: filter.roleName });
+    }
+
+    if (filter.hasAuth !== undefined) {
+      qb.andWhere(filter.hasAuth ? 'a.id IS NOT NULL' : 'a.id IS NULL');
     }
 
     const [rows, total] = await qb.getManyAndCount();
@@ -78,7 +99,7 @@ export class PeopleService {
   async findOne(id: number): Promise<PersonDto> {
     const person = await this.personRepository.findOne({
       where: { id },
-      relations: { roles: true },
+      relations: { roles: true, auth: true },
     });
     if (!person) {
       throw new NotFoundException(`Person ${id} no encontrada`);
@@ -91,7 +112,7 @@ export class PeopleService {
       const manager = queryRunner.manager;
       const person = await manager.findOne(Person, {
         where: { id },
-        relations: { roles: true },
+        relations: { roles: true, auth: true },
       });
       if (!person) {
         throw new NotFoundException(`Person ${id} no encontrada`);
@@ -115,6 +136,32 @@ export class PeopleService {
 
       if (dto.roleIds !== undefined) {
         person.roles = await this.loadRolesOrThrow(manager, dto.roleIds);
+      }
+
+      const isStaff = this.hasStaffRole(person.roles);
+      if (isStaff && !person.auth) {
+        if (!dto.email || !dto.password) {
+          throw new BadRequestException(
+            'Email y password son obligatorios para roles TRABAJADOR o ADMINISTRADOR',
+          );
+        }
+        person.auth = await this.createAuth(
+          manager,
+          id,
+          dto.email,
+          dto.password,
+        );
+      } else if (person.auth) {
+        const changed = dto.email !== undefined || dto.password !== undefined;
+        if (dto.email !== undefined) {
+          person.auth.email = dto.email;
+        }
+        if (dto.password !== undefined) {
+          person.auth.password = await hashPassword(dto.password);
+        }
+        if (changed) {
+          await this.saveAuth(manager, person.auth);
+        }
       }
 
       try {
@@ -143,6 +190,48 @@ export class PeopleService {
     });
   }
 
+  private hasStaffRole(roles: Role[]): boolean {
+    return roles.some((role) => STAFF_ROLES.includes(role.name));
+  }
+
+  private async createAuth(
+    manager: EntityManager,
+    personId: number,
+    email: string,
+    password: string,
+  ): Promise<Auth> {
+    const auth = manager.create(Auth, {
+      email,
+      password: await hashPassword(password),
+      google: false,
+      personId,
+    });
+    try {
+      await manager.save(auth);
+    } catch (e) {
+      if (isUniqueViolation(e)) {
+        throw new ConflictException(
+          `Ya existe un auth con el email "${email}"`,
+        );
+      }
+      throw e;
+    }
+    return auth;
+  }
+
+  private async saveAuth(manager: EntityManager, auth: Auth): Promise<void> {
+    try {
+      await manager.save(auth);
+    } catch (e) {
+      if (isUniqueViolation(e)) {
+        throw new ConflictException(
+          `Ya existe un auth con el email "${auth.email}"`,
+        );
+      }
+      throw e;
+    }
+  }
+
   private async loadRolesOrThrow(
     manager: EntityManager,
     ids: number[] | undefined,
@@ -165,7 +254,7 @@ export class PeopleService {
   ): Promise<PersonDto> {
     const person = await manager.findOne(Person, {
       where: { id },
-      relations: { roles: true },
+      relations: { roles: true, auth: true },
     });
     if (!person) {
       throw new NotFoundException(`Person ${id} no encontrada`);

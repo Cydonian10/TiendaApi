@@ -1,5 +1,6 @@
 import { ApiPropertyOptional } from '@nestjs/swagger';
-import { IsOptional, IsString } from 'class-validator';
+import { Transform } from 'class-transformer';
+import { IsBoolean, IsOptional, IsString } from 'class-validator';
 import { PaginationDto } from '@/common/dtos/pagination.dto';
 
 export class FilterPersonDto extends PaginationDto {
@@ -10,4 +11,13 @@ export class FilterPersonDto extends PaginationDto {
     description: 'Filtra por nombre de rol exacto',
   })
   roleName?: string;
+
+  @IsOptional()
+  @Transform(({ value }) => value === 'true')
+  @IsBoolean()
+  @ApiPropertyOptional({
+    example: true,
+    description: 'Filtra por personas con registro de auth',
+  })
+  hasAuth?: boolean;
 }

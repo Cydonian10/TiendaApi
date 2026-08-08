@@ -4,9 +4,11 @@ import {
   Entity,
   JoinTable,
   ManyToMany,
+  OneToOne,
   PrimaryGeneratedColumn,
 } from 'typeorm';
 import { Role } from '@/modules/roles/entities/role.entity';
+import { Auth } from '@/modules/auth/entities/auth.entity';
 
 @Entity('person')
 export class Person {
@@ -35,6 +37,9 @@ export class Person {
     inverseJoinColumn: { name: 'roleId', referencedColumnName: 'id' },
   })
   roles: Role[];
+
+  @OneToOne(() => Auth, (auth) => auth.person)
+  auth?: Auth | null;
 
   @DeleteDateColumn({ type: 'timestamp' })
   deletedAt: Date | null;
