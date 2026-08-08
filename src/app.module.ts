@@ -13,6 +13,7 @@ import { MeasurementUnitsModule } from './modules/measurement-units/measurement-
 import { PeopleModule } from './modules/people/people.module';
 import { RolesModule } from './modules/roles/roles.module';
 import { AuthModule } from './modules/auth/auth.module';
+import { SalesModule } from './modules/sales/sales.module';
 
 @Module({
   imports: [
@@ -26,6 +27,7 @@ import { AuthModule } from './modules/auth/auth.module';
     PeopleModule,
     RolesModule,
     AuthModule,
+    SalesModule,
   ],
   controllers: [AppController],
   providers: [
