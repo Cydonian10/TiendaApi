@@ -10,6 +10,7 @@ import { ProductsModule } from './modules/products/products.module';
 import { AttributesModule } from './modules/attributes/attributes.module';
 import { ImagesModule } from './modules/images/images.module';
 import { MeasurementUnitsModule } from './modules/measurement-units/measurement-units.module';
+import { PeopleModule } from './modules/people/people.module';
 
 @Module({
   imports: [
@@ -20,6 +21,7 @@ import { MeasurementUnitsModule } from './modules/measurement-units/measurement-
     AttributesModule,
     ImagesModule,
     MeasurementUnitsModule,
+    PeopleModule,
   ],
   controllers: [AppController],
   providers: [
