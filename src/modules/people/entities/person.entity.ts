@@ -4,11 +4,13 @@ import {
   Entity,
   JoinTable,
   ManyToMany,
+  OneToMany,
   OneToOne,
   PrimaryGeneratedColumn,
 } from 'typeorm';
 import { Role } from '@/modules/roles/entities/role.entity';
 import { Auth } from '@/modules/auth/entities/auth.entity';
+import { Sale } from '@/modules/sales/entities/sale.entity';
 
 @Entity('person')
 export class Person {
@@ -40,6 +42,12 @@ export class Person {
 
   @OneToOne(() => Auth, (auth) => auth.person)
   auth?: Auth | null;
+
+  @OneToMany(() => Sale, (sale) => sale.customer)
+  sales: Sale[];
+
+  @OneToMany(() => Sale, (sale) => sale.seller)
+  salesAsSeller: Sale[];
 
   @DeleteDateColumn({ type: 'timestamp' })
   deletedAt: Date | null;
