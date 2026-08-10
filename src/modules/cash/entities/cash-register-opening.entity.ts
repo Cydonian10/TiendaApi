@@ -7,10 +7,10 @@ import {
   PrimaryGeneratedColumn,
 } from 'typeorm';
 import { Person } from '@/modules/people/entities/person.entity';
-import { SalePayment } from '@/modules/sales/entities/sale-payment.entity';
 import { CashRegister } from './cash-register.entity';
 import { CashMovement } from './cash-movement.entity';
 import { ClosingDetail } from './closing-detail.entity';
+import { Sale } from '@/modules/sales/entities/sale.entity';
 
 export enum CashOpeningStatus {
   OPEN = 'open',
@@ -55,8 +55,8 @@ export class CashRegisterOpening {
   @Column({ type: 'decimal', precision: 10, scale: 2, nullable: true })
   difference: string | null;
 
-  @OneToMany(() => SalePayment, (payment) => payment.cashOpening)
-  payments: SalePayment[];
+  @OneToMany(() => Sale, (sale) => sale.cashOpening)
+  sales: Sale[];
 
   @OneToMany(() => CashMovement, (movement) => movement.opening)
   cashMovements: CashMovement[];

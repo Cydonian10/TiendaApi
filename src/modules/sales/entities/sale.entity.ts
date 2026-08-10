@@ -9,6 +9,7 @@ import {
 import { Person } from '@/modules/people/entities/person.entity';
 import { SaleDetail } from './sale-detail.entity';
 import { SalePayment } from './sale-payment.entity';
+import { CashRegisterOpening } from '@/modules/cash/entities/cash-register-opening.entity';
 
 @Entity('sale')
 export class Sale {
@@ -37,6 +38,11 @@ export class Sale {
 
   @OneToMany(() => SalePayment, (payment) => payment.sale, { cascade: true })
   payments: SalePayment[];
+
+  @ManyToOne(() => CashRegisterOpening, (opening) => opening.sales, {
+    nullable: false,
+  })
+  cashOpening: CashRegisterOpening;
 
   @DeleteDateColumn({ type: 'timestamp' })
   deletedAt: Date | null;
