@@ -8,6 +8,7 @@ import {
 } from 'typeorm';
 import { Person } from '@/modules/people/entities/person.entity';
 import { SaleDetail } from './sale-detail.entity';
+import { SalePayment } from './sale-payment.entity';
 
 @Entity('sale')
 export class Sale {
@@ -33,6 +34,9 @@ export class Sale {
 
   @OneToMany(() => SaleDetail, (detail) => detail.sale, { cascade: true })
   details: SaleDetail[];
+
+  @OneToMany(() => SalePayment, (payment) => payment.sale, { cascade: true })
+  payments: SalePayment[];
 
   @DeleteDateColumn({ type: 'timestamp' })
   deletedAt: Date | null;

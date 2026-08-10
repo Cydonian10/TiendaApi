@@ -14,6 +14,7 @@ import { PeopleModule } from './modules/people/people.module';
 import { RolesModule } from './modules/roles/roles.module';
 import { AuthModule } from './modules/auth/auth.module';
 import { SalesModule } from './modules/sales/sales.module';
+import { CashModule } from './modules/cash/cash.module';
 
 @Module({
   imports: [
@@ -28,6 +29,7 @@ import { SalesModule } from './modules/sales/sales.module';
     RolesModule,
     AuthModule,
     SalesModule,
+    CashModule,
   ],
   controllers: [AppController],
   providers: [
