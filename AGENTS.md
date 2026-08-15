@@ -74,3 +74,10 @@ Patrón usado: `@InjectRepository(Entity)` en el service + `TypeOrmModule.forFea
 - `npm run lint` reformatea código que se desvíe de Prettier (las entidades se escriben en comillas dobles / 4 espacios / sin punto y coma; tras un lint quedan en single quote).
 - El `README.md` es la plantilla upstream de Nest, no describe este repo.
 - `npm install` puede avisar de paquetes con scripts no aprobados (nestjs/swc/scarf); no rompe la instalación.
+
+## Usuario de Prueba
+
+```
+  email: admin@seed.com
+  password: secret123
+```
