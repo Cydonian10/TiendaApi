@@ -1,6 +1,6 @@
 # SPEC 13 — Brands y Categories en base-products
 
-> **Status:** Aprovado
+> **Status:** Implementado
 > **Depends on:** SPEC 02 (paginación/filtros), SPEC 05 (base-products CRUD), SPEC 10 (flujo de create), SPEC 11 (patrón many-to-many)
 > **Date:** 2026-08-14
 > **Objective:** Agregar las entidades cross `brand` y `category` al módulo products, cada una con CRUD completo paginado y filtrable (name + description, name único), y vincularlas al base-product con `brandId` nullable (una marca) y una relación many-to-many a categorías, aceptando `brandId`/`categoryIds` al crear y actualizar el base-product y filtrando el listado por ambos.
@@ -133,21 +133,21 @@ Convenciones:
 
 ## Acceptance criteria
 
-- [ ] Migración crea `brand`, `category` y `base_product_category` (PK compuesta) y agrega `base_product.brandId` nullable con FK a `brand`.
-- [ ] `POST /brands { name, description? }` → **201** con `BrandDto`; `name` duplicado → **409**; sin `name` → **400**.
-- [ ] `GET /brands` → `PaginatedResult` con `search` unaccent sobre `name`; `GET /brands/:id` → detalle; id inexistente → **404**.
-- [ ] `PATCH /brands/:id` actualiza `name`/`description`; id inexistente → **404**; `name` duplicado → **409**.
-- [ ] `DELETE /brands/:id` sin base-products asociados → **204**; con base-products asociados → **409**.
-- [ ] Los mismos criterios aplican para `/categories`.
-- [ ] `POST /base-products { name, units, brandId, categoryIds }` → **201** con `brand: {id,name}` y `categories[]` en la respuesta; las asociaciones quedan persistidas.
-- [ ] `POST /base-products` con `brandId` inexistente → **404** y rollback total (no queda base-product ni unidades ni producto).
-- [ ] `POST /base-products` con algún `categoryId` inexistente → **404** y rollback total.
-- [ ] `POST /base-products` sin `brandId`/`categoryIds` → **201** con `brand: null` y `categories: []`.
-- [ ] `PATCH /base-products/:id`: `brandId` número → reasigna; `brandId: null` → limpia la marca; `categoryIds` presente → reemplaza el set; `categoryIds: []` → limpia; ambos ausentes → no tocan las asociaciones.
-- [ ] `categoryIds` con duplicados → **400**.
-- [ ] `GET /base-products` devuelve `brand` y `categories` por cada item; `GET /base-products?brandId=1` y `?categoryId=2` filtran correctamente.
-- [ ] El `defaultProduct` del create no cambia (no tiene brand/categories).
-- [ ] `npm run build`, `npm run lint` y `npm test` pasan.
+- [x] Migración crea `brand`, `category` y `base_product_category` (PK compuesta) y agrega `base_product.brandId` nullable con FK a `brand`.
+- [x] `POST /brands { name, description? }` → **201** con `BrandDto`; `name` duplicado → **409**; sin `name` → **400**.
+- [x] `GET /brands` → `PaginatedResult` con `search` unaccent sobre `name`; `GET /brands/:id` → detalle; id inexistente → **404**.
+- [x] `PATCH /brands/:id` actualiza `name`/`description`; id inexistente → **404**; `name` duplicado → **409**.
+- [x] `DELETE /brands/:id` sin base-products asociados → **204**; con base-products asociados → **409**.
+- [x] Los mismos criterios aplican para `/categories`.
+- [x] `POST /base-products { name, units, brandId, categoryIds }` → **201** con `brand: {id,name}` y `categories[]` en la respuesta; las asociaciones quedan persistidas.
+- [x] `POST /base-products` con `brandId` inexistente → **404** y rollback total (no queda base-product ni unidades ni producto).
+- [x] `POST /base-products` con algún `categoryId` inexistente → **404** y rollback total.
+- [x] `POST /base-products` sin `brandId`/`categoryIds` → **201** con `brand: null` y `categories: []`.
+- [x] `PATCH /base-products/:id`: `brandId` número → reasigna; `brandId: null` → limpia la marca; `categoryIds` presente → reemplaza el set; `categoryIds: []` → limpia; ambos ausentes → no tocan las asociaciones.
+- [x] `categoryIds` con duplicados → **400**.
+- [x] `GET /base-products` devuelve `brand` y `categories` por cada item; `GET /base-products?brandId=1` y `?categoryId=2` filtran correctamente.
+- [x] El `defaultProduct` del create no cambia (no tiene brand/categories).
+- [x] `npm run build`, `npm run lint` y `npm test` pasan.
 
 ## Decisions
 

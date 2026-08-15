@@ -1,11 +1,14 @@
-import { ApiProperty } from '@nestjs/swagger';
+import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 import { Type } from 'class-transformer';
 import {
   ArrayNotEmpty,
+  ArrayUnique,
   IsArray,
   IsBoolean,
+  IsInt,
   IsNotEmpty,
   IsNumber,
+  IsOptional,
   IsString,
   Min,
   ValidateNested,
@@ -55,4 +58,25 @@ export class CreateBaseProductDto {
     description: 'Unidades del producto base (obligatorio, al menos una)',
   })
   units: CreateBaseProductUnitDto[];
+
+  @IsOptional()
+  @IsInt()
+  @Type(() => Number)
+  @ApiPropertyOptional({
+    example: 1,
+    description: 'Marca del base-product (null para limpiar)',
+    nullable: true,
+  })
+  brandId?: number | null;
+
+  @IsOptional()
+  @IsArray()
+  @IsInt({ each: true })
+  @ArrayUnique()
+  @Type(() => Number)
+  @ApiPropertyOptional({
+    example: [1, 2],
+    description: 'Categorías del base-product',
+  })
+  categoryIds?: number[];
 }
