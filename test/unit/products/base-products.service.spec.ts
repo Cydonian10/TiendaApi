@@ -166,6 +166,7 @@ describe('BaseProductsService.create', () => {
       id: 1,
       name: 'Clavo',
       productCount: 1,
+      unitCount: 0,
       brand: null,
       categories: [],
     });
@@ -324,6 +325,7 @@ describe('BaseProductsService.create', () => {
       id: 1,
       name: 'Clavo',
       productCount: 1,
+      unitCount: 0,
       brand: { id: 5, name: 'Cerámica' },
       categories: [
         { id: 1, name: 'Ferretería' },
@@ -460,6 +462,7 @@ describe('BaseProductsService.update', () => {
       id: 1,
       name: 'Clavo 2',
       productCount: 0,
+      unitCount: 0,
       brand: null,
       categories: [],
     });
