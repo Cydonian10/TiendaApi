@@ -43,4 +43,6 @@ export class BaseProduct {
   categories: Category[];
 
   productCount?: number;
+
+  unitCount?: number;
 }

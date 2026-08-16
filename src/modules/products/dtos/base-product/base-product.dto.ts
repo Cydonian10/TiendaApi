@@ -15,6 +15,12 @@ export class BaseProductDto {
   productCount: number;
 
   @ApiProperty({
+    example: 0,
+    description: 'Cantidad de unidades asociados',
+  })
+  unitCount: number;
+
+  @ApiProperty({
     example: { id: 1, name: 'Cerámica' },
     description: 'Marca del producto base (null si no tiene)',
     nullable: true,
@@ -32,6 +38,7 @@ export class BaseProductDto {
     dto.id = bp.id;
     dto.name = bp.name;
     dto.productCount = bp.productCount ?? 0;
+    dto.unitCount = bp.unitCount ?? 0;
     dto.brand = bp.brand ? { id: bp.brand.id, name: bp.brand.name } : null;
     dto.categories = (bp.categories ?? []).map((c) => ({
       id: c.id,
@@ -45,6 +52,7 @@ export class BaseProductDto {
       id?: unknown;
       name?: unknown;
       productCount?: unknown;
+      unitCount?: unknown;
       brand?: { id?: unknown; name?: unknown } | null;
       categories?: { id?: unknown; name?: unknown }[] | null;
     };
@@ -52,6 +60,7 @@ export class BaseProductDto {
     dto.id = Number(r.id);
     dto.name = typeof r.name === 'string' ? r.name : '';
     dto.productCount = Number(r.productCount ?? 0);
+    dto.unitCount = Number(r.unitCount ?? 0);
     dto.brand =
       r.brand && r.brand.id != null
         ? {
