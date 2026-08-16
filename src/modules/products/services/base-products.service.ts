@@ -40,6 +40,8 @@ export class BaseProductsService {
     const categoryId = filter.categoryId ?? null;
     const rows = await this.baseProductRepository.manager.query<unknown[]>(
       `SELECT bp.id AS id, bp.name AS name, COUNT(p.id)::int AS "productCount",
+              (SELECT COUNT(*)::int FROM "base-product-unit" bpu
+               WHERE bpu."baseProductId" = bp.id) AS "unitCount",
               CASE WHEN b.id IS NULL THEN NULL
                    ELSE json_build_object('id', b.id, 'name', b.name) END AS brand,
               COALESCE(
@@ -95,6 +97,8 @@ export class BaseProductsService {
   async findOne(id: number): Promise<BaseProductDto> {
     const rows = await this.baseProductRepository.manager.query<unknown[]>(
       `SELECT bp.id AS id, bp.name AS name, COUNT(p.id)::int AS "productCount",
+              (SELECT COUNT(*)::int FROM "base-product-unit" bpu
+               WHERE bpu."baseProductId" = bp.id) AS "unitCount",
               CASE WHEN b.id IS NULL THEN NULL
                    ELSE json_build_object('id', b.id, 'name', b.name) END AS brand,
               COALESCE(
