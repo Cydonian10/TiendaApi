@@ -12,6 +12,7 @@ import { Category } from '../entities/category.entity';
 import { BaseProductUnit } from '../../measurement-units/entities/baseProduct-unit.entity';
 import { MeasurementUnit } from '../../measurement-units/entities/measurement-unit.entity';
 import { BaseProductDto } from '../dtos/base-product/base-product.dto';
+import { BaseProductDetailDto } from '../dtos/base-product/base-product-detail.dto';
 import { BaseProductFilterDto } from '../dtos/base-product/filter-base-product.dto';
 import { CreateBaseProductDto } from '../dtos/base-product/create-base-product.dto';
 import { CreateBaseProductResponseDto } from '../dtos/base-product/create-base-product-response.dto';
@@ -119,6 +120,26 @@ export class BaseProductsService {
       throw new NotFoundException(`BaseProduct ${id} no encontrado`);
     }
     return BaseProductDto.fromRow(rows[0]);
+  }
+
+  async findDetail(id: number): Promise<BaseProductDetailDto> {
+    const baseProduct = await this.baseProductRepository
+      .createQueryBuilder('bp')
+      .leftJoinAndSelect('bp.brand', 'brand')
+      .leftJoinAndSelect('bp.categories', 'category')
+      .leftJoinAndSelect('bp.units', 'baseProductUnit')
+      .leftJoinAndSelect('baseProductUnit.unit', 'unit')
+      .where('bp.id = :id', { id })
+      .getOne();
+    if (!baseProduct) {
+      throw new NotFoundException(`BaseProduct ${id} no encontrado`);
+    }
+    baseProduct.productCount = await this.baseProductRepository.manager
+      .getRepository(Product)
+      .createQueryBuilder('product')
+      .where('product."baseProductId" = :id', { id })
+      .getCount();
+    return BaseProductDetailDto.fromEntity(baseProduct);
   }
 
   async create(

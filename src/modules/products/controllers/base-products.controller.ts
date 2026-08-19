@@ -38,6 +38,11 @@ export class BaseProductsController {
     return this.baseProductsService.findOne(id);
   }
 
+  @Get(':id/detail')
+  findDetail(@Param('id', ParseIntPipe) id: number) {
+    return this.baseProductsService.findDetail(id);
+  }
+
   @Patch(':id')
   update(
     @Param('id', ParseIntPipe) id: number,
