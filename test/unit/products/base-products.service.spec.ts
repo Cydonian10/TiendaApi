@@ -6,6 +6,7 @@ import { getRepositoryToken } from '@nestjs/typeorm';
 import { ConflictException, NotFoundException } from '@nestjs/common';
 import { QueryRunner } from 'typeorm';
 import { validate } from 'class-validator';
+import { plainToInstance } from 'class-transformer';
 import { BaseProductsService } from '../../../src/modules/products/services/base-products.service';
 import { BaseProduct } from '../../../src/modules/products/entities/base-product.entity';
 import { Product } from '../../../src/modules/products/entities/producto.entity';
@@ -37,6 +38,8 @@ function makeDto(): CreateBaseProductDto {
     { unitId: 1, factor: 1, isMain: true },
     { unitId: 2, factor: 12.5, isMain: false },
   ];
+  dto.initialPrice = 0;
+  dto.initialStock = 0;
   return dto;
 }
 
@@ -381,6 +384,108 @@ describe('BaseProductsService.create', () => {
     const errors = await validate(dto);
 
     expect(errors.some((e) => e.property === 'categoryIds')).toBe(true);
+  });
+
+  it('CreateBaseProductDto rejects missing initialPrice (400)', async () => {
+    const dto = new CreateBaseProductDto();
+    dto.name = 'Clavo';
+    dto.units = [{ unitId: 1, factor: 1, isMain: true }];
+    dto.initialStock = 10;
+
+    const errors = await validate(dto);
+
+    expect(errors.some((e) => e.property === 'initialPrice')).toBe(true);
+  });
+
+  it('CreateBaseProductDto rejects missing initialStock (400)', async () => {
+    const dto = new CreateBaseProductDto();
+    dto.name = 'Clavo';
+    dto.units = [{ unitId: 1, factor: 1, isMain: true }];
+    dto.initialPrice = 10;
+
+    const errors = await validate(dto);
+
+    expect(errors.some((e) => e.property === 'initialStock')).toBe(true);
+  });
+
+  it('CreateBaseProductDto rejects negative initialPrice (400)', async () => {
+    const dto = new CreateBaseProductDto();
+    dto.name = 'Clavo';
+    dto.units = [{ unitId: 1, factor: 1, isMain: true }];
+    dto.initialPrice = -1;
+    dto.initialStock = 0;
+
+    const errors = await validate(dto);
+
+    expect(errors.some((e) => e.property === 'initialPrice')).toBe(true);
+  });
+
+  it('CreateBaseProductDto rejects negative initialStock (400)', async () => {
+    const dto = new CreateBaseProductDto();
+    dto.name = 'Clavo';
+    dto.units = [{ unitId: 1, factor: 1, isMain: true }];
+    dto.initialPrice = 0;
+    dto.initialStock = -5;
+
+    const errors = await validate(dto);
+
+    expect(errors.some((e) => e.property === 'initialStock')).toBe(true);
+  });
+
+  it('create persists initialPrice and initialStock normalized to 2 decimals', async () => {
+    setupHappyPath();
+    const dto = makeDto();
+    dto.initialPrice = 10.5;
+    dto.initialStock = 100.25;
+    // refetch returns the persisted values
+    manager.findOne.mockResolvedValueOnce({
+      ...loadedProductStub,
+      price: '10.50',
+      stock: '100.25',
+    });
+
+    const result = await service.create(dto);
+
+    const productCreateCalls = manager.create.mock.calls.filter(
+      (call) => call[0] === Product,
+    );
+    expect(productCreateCalls[0][1]).toMatchObject({
+      stock: '100.25',
+      price: '10.50',
+    });
+    expect(result.defaultProduct.price).toBe(10.5);
+    expect(result.defaultProduct.stock).toBe(100.25);
+  });
+
+  it('create rounds initial values to 2 decimals (1.239 -> 1.24)', async () => {
+    setupHappyPath();
+    const dto = makeDto();
+    dto.initialPrice = 1.239;
+    dto.initialStock = 1.239;
+
+    await service.create(dto);
+
+    const productCreateCalls = manager.create.mock.calls.filter(
+      (call) => call[0] === Product,
+    );
+    expect(productCreateCalls[0][1]).toMatchObject({
+      stock: '1.24',
+      price: '1.24',
+    });
+  });
+
+  it('accepts numeric strings for initialPrice/initialStock (transform)', async () => {
+    const plain = {
+      name: 'Clavo',
+      units: [{ unitId: 1, factor: 1, isMain: true }],
+      initialPrice: '12.50',
+      initialStock: '100',
+    };
+    const dto = plainToInstance(CreateBaseProductDto, plain);
+    const errors = await validate(dto);
+    expect(errors).toHaveLength(0);
+    expect(typeof dto.initialPrice).toBe('number');
+    expect(typeof dto.initialStock).toBe('number');
   });
 });
 

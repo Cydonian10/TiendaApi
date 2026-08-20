@@ -1,6 +1,6 @@
 # SPEC 14 — Precio y stock iniciales del producto por default
 
-> **Status:** Aprobado
+> **Status:** Implementado
 > **Depends on:** SPEC 09 (unidades en base-products), SPEC 10 (producto por default), SPEC 13 (brands y categories)
 > **Date:** 2026-08-19
 > **Objective:** Hacer obligatorios `initialPrice` e `initialStock` al crear un base-product para persistirlos, redondeados a dos decimales, en el producto por default creado automáticamente.
@@ -66,14 +66,14 @@ const product = manager.create(Product, {
 
 ## Acceptance criteria
 
-- [ ] `POST /base-products` sin `initialPrice` o sin `initialStock` → **400** y no se crea ninguna entidad (rollback).
-- [ ] `initialPrice` o `initialStock` negativos → **400**.
-- [ ] `POST /base-products { ..., initialPrice, initialStock }` → **201**; `defaultProduct.price`/`defaultProduct.stock` devuelven los valores normalizados a 2 decimales.
-- [ ] `1.239` → se persiste como `1.24`.
-- [ ] String numérico `"12.50"` aceptado y convertido.
-- [ ] `name` duplicado / `unitId` inexistente / `brandId` o `categoryId` inexistentes → **409/404** con rollback total, incluido el nuevo producto default.
-- [ ] `GET /products` y `POST /products` sin cambios.
-- [ ] `npm run build`, `npm run lint` y `npm test` pasan.
+- [x] `POST /base-products` sin `initialPrice` o sin `initialStock` → **400** y no se crea ninguna entidad (rollback).
+- [x] `initialPrice` o `initialStock` negativos → **400**.
+- [x] `POST /base-products { ..., initialPrice, initialStock }` → **201**; `defaultProduct.price`/`defaultProduct.stock` devuelven los valores normalizados a 2 decimales.
+- [x] `1.239` → se persiste como `1.24`.
+- [x] String numérico `"12.50"` aceptado y convertido.
+- [x] `name` duplicado / `unitId` inexistente / `brandId` o `categoryId` inexistentes → **409/404** con rollback total, incluido el nuevo producto default.
+- [x] `GET /products` y `POST /products` sin cambios.
+- [x] `npm run build`, `npm run lint` y `npm test` pasan.
 
 ## Decisions
 

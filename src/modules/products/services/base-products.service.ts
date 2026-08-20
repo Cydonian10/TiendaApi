@@ -225,8 +225,8 @@ export class BaseProductsService {
 
       const product = manager.create(Product, {
         name: baseProduct.name,
-        stock: '0.00',
-        price: '0.00',
+        stock: this.round2(dto.initialStock),
+        price: this.round2(dto.initialPrice),
         attributeKey: '',
         baseProduct,
       });
@@ -334,5 +334,9 @@ export class BaseProductsService {
       throw new NotFoundException(`BaseProduct ${id} no encontrado`);
     }
     return BaseProductDto.fromEntity(bp);
+  }
+
+  private round2(value: number): string {
+    return (Math.round(value * 100) / 100).toFixed(2);
   }
 }
