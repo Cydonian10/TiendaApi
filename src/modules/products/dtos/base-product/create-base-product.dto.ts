@@ -79,4 +79,22 @@ export class CreateBaseProductDto {
     description: 'Categorías del base-product',
   })
   categoryIds?: number[];
+
+  @IsNumber()
+  @Type(() => Number)
+  @Min(0)
+  @ApiProperty({
+    example: 10.5,
+    description: 'Precio inicial del producto por default',
+  })
+  initialPrice: number;
+
+  @IsNumber()
+  @Type(() => Number)
+  @Min(0)
+  @ApiProperty({
+    example: 100,
+    description: 'Stock inicial del producto por default',
+  })
+  initialStock: number;
 }
