@@ -258,7 +258,7 @@ export class BaseProductsService {
       const manager = queryRunner.manager;
       const baseProduct = await manager.findOne(BaseProduct, {
         where: { id },
-        relations: { categories: true },
+        relations: { categories: true, units: true },
       });
       if (!baseProduct) {
         throw new NotFoundException(`BaseProduct ${id} no encontrado`);
@@ -291,8 +291,50 @@ export class BaseProductsService {
         }
         baseProduct.categories = categories;
       }
+
+      let measurementUnits: MeasurementUnit[] = [];
+      if (dto.units !== undefined) {
+        measurementUnits = await manager.find(MeasurementUnit, {
+          where: { id: In(dto.units.map((item) => item.unitId)) },
+        });
+        if (measurementUnits.length !== dto.units.length) {
+          const found = new Set(measurementUnits.map((unit) => unit.id));
+          const missing = dto.units.find((item) => !found.has(item.unitId));
+          throw new NotFoundException(
+            `MeasurementUnit ${missing?.unitId} no encontrada`,
+          );
+        }
+      }
+
       try {
         await manager.save(baseProduct);
+
+        if (dto.units !== undefined) {
+          await manager.delete(BaseProductUnit, {
+            baseProduct: { id },
+          });
+          await manager.save(
+            BaseProductUnit,
+            dto.units.map((item) =>
+              manager.create(BaseProductUnit, {
+                baseProduct,
+                unit: measurementUnits.find((unit) => unit.id === item.unitId),
+                factor: item.factor.toFixed(2),
+                isMain: item.isMain,
+              }),
+            ),
+          );
+        }
+
+        if (dto.name !== undefined) {
+          const defaultProduct = await manager.findOne(Product, {
+            where: { baseProduct: { id }, attributeKey: '' },
+          });
+          if (defaultProduct) {
+            defaultProduct.name = dto.name;
+            await manager.save(defaultProduct);
+          }
+        }
       } catch (e) {
         if (isUniqueViolation(e)) {
           throw new ConflictException(

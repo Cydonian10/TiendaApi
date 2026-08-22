@@ -15,6 +15,7 @@ import { RolesModule } from './modules/roles/roles.module';
 import { AuthModule } from './modules/auth/auth.module';
 import { SalesModule } from './modules/sales/sales.module';
 import { CashModule } from './modules/cash/cash.module';
+import { SeedModule } from './modules/seed/seed.module';
 
 @Module({
   imports: [
@@ -30,6 +31,7 @@ import { CashModule } from './modules/cash/cash.module';
     AuthModule,
     SalesModule,
     CashModule,
+    SeedModule,
   ],
   controllers: [AppController],
   providers: [

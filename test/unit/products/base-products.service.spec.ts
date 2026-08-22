@@ -12,6 +12,7 @@ import { BaseProduct } from '../../../src/modules/products/entities/base-product
 import { Product } from '../../../src/modules/products/entities/producto.entity';
 import { Brand } from '../../../src/modules/products/entities/brand.entity';
 import { MeasurementUnit } from '../../../src/modules/measurement-units/entities/measurement-unit.entity';
+import { BaseProductUnit } from '../../../src/modules/measurement-units/entities/baseProduct-unit.entity';
 import { CreateBaseProductDto } from '../../../src/modules/products/dtos/base-product/create-base-product.dto';
 import { UpdateBaseProductDto } from '../../../src/modules/products/dtos/base-product/update-base-product.dto';
 import { UnitOfWork } from '../../../src/database/unitOfWork';
@@ -25,6 +26,7 @@ function pgError(code: string) {
 type ManagerStub = {
   create: jest.Mock;
   save: jest.Mock;
+  delete?: jest.Mock;
   findOne: jest.Mock;
   findOneBy: jest.Mock;
   find: jest.Mock;
@@ -81,6 +83,7 @@ describe('BaseProductsService.create', () => {
     manager = {
       create: jest.fn(),
       save: jest.fn(),
+      delete: jest.fn(),
       findOne: jest.fn(),
       findOneBy: jest.fn(),
       find: jest.fn(),
@@ -498,6 +501,7 @@ describe('BaseProductsService.update', () => {
     manager = {
       create: jest.fn(),
       save: jest.fn(),
+      delete: jest.fn(),
       findOne: jest.fn(),
       findOneBy: jest.fn(),
       find: jest.fn(),
@@ -539,19 +543,21 @@ describe('BaseProductsService.update', () => {
   });
 
   it('only changes name when brandId/categoryIds are absent', async () => {
-    manager.findOne.mockResolvedValueOnce({
-      id: 1,
-      name: 'Clavo',
-      brandId: null,
-      categories: [],
-    });
     manager.save.mockResolvedValue({});
-    manager.findOne.mockResolvedValueOnce({
-      id: 1,
-      name: 'Clavo 2',
-      brand: null,
-      categories: [],
-    });
+    manager.findOne
+      .mockResolvedValueOnce({
+        id: 1,
+        name: 'Clavo',
+        brandId: null,
+        categories: [],
+      })
+      .mockResolvedValueOnce(null)
+      .mockResolvedValueOnce({
+        id: 1,
+        name: 'Clavo 2',
+        brand: null,
+        categories: [],
+      });
     const dto = new UpdateBaseProductDto();
     dto.name = 'Clavo 2';
 
@@ -572,6 +578,81 @@ describe('BaseProductsService.update', () => {
       categories: [],
     });
     expect(queryRunner.commitTransaction).toHaveBeenCalledTimes(1);
+  });
+
+  it('replaces units and renames only the default product', async () => {
+    const baseProduct = {
+      id: 1,
+      name: 'Clavo',
+      brandId: null,
+      categories: [],
+      units: [{ id: 10, unit: { id: 1 }, factor: '1.00', isMain: true }],
+    };
+    const defaultProduct = {
+      id: 10,
+      name: 'Clavo',
+      attributeKey: '',
+      baseProduct,
+    };
+    manager.findOne
+      .mockResolvedValueOnce(baseProduct)
+      .mockResolvedValueOnce(defaultProduct)
+      .mockResolvedValueOnce({
+        id: 1,
+        name: 'Clavo nuevo',
+        brand: null,
+        categories: [],
+        units: [{ id: 11, unit: { id: 2 }, factor: '100.00', isMain: true }],
+      });
+    manager.find.mockResolvedValue([{ id: 2, name: 'Gramo', value: 'g' }]);
+    manager.save.mockResolvedValue({});
+    manager.delete.mockResolvedValue({ affected: 1 });
+
+    const dto = new UpdateBaseProductDto();
+    dto.name = 'Clavo nuevo';
+    dto.units = [{ unitId: 2, factor: 100, isMain: true }];
+
+    const result = await service.update(1, dto);
+
+    expect(manager.delete).toHaveBeenCalledWith(BaseProductUnit, {
+      baseProduct: { id: 1 },
+    });
+    expect(manager.create).toHaveBeenCalledWith(BaseProductUnit, {
+      baseProduct,
+      unit: { id: 2, name: 'Gramo', value: 'g' },
+      factor: '100.00',
+      isMain: true,
+    });
+    expect(defaultProduct.name).toBe('Clavo nuevo');
+    expect(result.name).toBe('Clavo nuevo');
+    expect(queryRunner.commitTransaction).toHaveBeenCalledTimes(1);
+  });
+
+  it('keeps units and product price/stock untouched when they are absent', async () => {
+    manager.save.mockResolvedValue({});
+    manager.findOne
+      .mockResolvedValueOnce({
+        id: 1,
+        name: 'Clavo',
+        brandId: null,
+        categories: [],
+        units: [{ id: 10, unit: { id: 1 }, factor: '1.00', isMain: true }],
+      })
+      .mockResolvedValueOnce(null)
+      .mockResolvedValueOnce({
+        id: 1,
+        name: 'Clavo actualizado',
+        brand: null,
+        categories: [],
+      });
+
+    const dto = new UpdateBaseProductDto();
+    dto.name = 'Clavo actualizado';
+
+    await service.update(1, dto);
+
+    expect(manager.delete).not.toHaveBeenCalled();
+    expect(manager.findOne).toHaveBeenCalledTimes(3);
   });
 
   it('brandId number validates existence and reassigns', async () => {
