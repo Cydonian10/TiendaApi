@@ -9,7 +9,7 @@ export class ProductFilterDto extends PaginationDto {
   @ApiPropertyOptional({
     example: 'tornillo',
     description:
-      'Búsqueda insensible a tildes/mayúsculas sobre el nombre computado del producto',
+      'Búsqueda insensible a tildes/mayúsculas sobre el nombre del producto base',
   })
   search?: string;
 

@@ -7,12 +7,6 @@ export class ProductDto {
   @ApiProperty({ example: 1, description: 'ID del producto' })
   id: number;
 
-  @ApiProperty({
-    example: 'Tornillo - Color: Rojo, Tamaño: Grande',
-    description: 'Nombre computado del producto',
-  })
-  name: string;
-
   @ApiProperty({ example: 10, description: 'Stock del producto' })
   stock: number;
 
@@ -45,7 +39,6 @@ export class ProductDto {
   static fromEntity(product: Product): ProductDto {
     const dto = new ProductDto();
     dto.id = product.id;
-    dto.name = product.name;
     dto.stock = parseFloat(product.stock);
     dto.price = parseFloat(product.price);
     dto.baseProductId = product.baseProduct.id;

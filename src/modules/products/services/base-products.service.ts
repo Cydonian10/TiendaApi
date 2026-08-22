@@ -224,7 +224,6 @@ export class BaseProductsService {
       }
 
       const product = manager.create(Product, {
-        name: baseProduct.name,
         stock: this.round2(dto.initialStock),
         price: this.round2(dto.initialPrice),
         attributeKey: '',
@@ -324,16 +323,6 @@ export class BaseProductsService {
               }),
             ),
           );
-        }
-
-        if (dto.name !== undefined) {
-          const defaultProduct = await manager.findOne(Product, {
-            where: { baseProduct: { id }, attributeKey: '' },
-          });
-          if (defaultProduct) {
-            defaultProduct.name = dto.name;
-            await manager.save(defaultProduct);
-          }
         }
       } catch (e) {
         if (isUniqueViolation(e)) {
