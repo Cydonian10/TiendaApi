@@ -14,6 +14,7 @@ import { ProductsService } from '../services/products.service';
 import { CreateProductDto } from '../dtos/product/create-product.dto';
 import { UpdateProductDto } from '../dtos/product/update-product.dto';
 import { ProductFilterDto } from '../dtos/product/filter-product.dto';
+import { UpdateProductAttributeOrdersDto } from '../dtos/product/update-attribute-orders.dto';
 
 @ApiTags('Products')
 @Controller('products')
@@ -38,6 +39,14 @@ export class ProductsController {
   @Patch(':id')
   update(@Param('id', ParseIntPipe) id: number, @Body() dto: UpdateProductDto) {
     return this.productsService.update(id, dto);
+  }
+
+  @Patch(':id/attribute-orders')
+  updateAttributeOrders(
+    @Param('id', ParseIntPipe) id: number,
+    @Body() dto: UpdateProductAttributeOrdersDto,
+  ) {
+    return this.productsService.updateAttributeOrders(id, dto.orders);
   }
 
   @Delete(':id')

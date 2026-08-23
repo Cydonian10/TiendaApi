@@ -18,6 +18,7 @@ import { CreateProductDto } from '../dtos/product/create-product.dto';
 import { UpdateProductDto } from '../dtos/product/update-product.dto';
 import { ProductFilterDto } from '../dtos/product/filter-product.dto';
 import { ProductDto } from '../dtos/product/product.dto';
+import { ProductAttributeOrderItemDto } from '../dtos/product/update-attribute-orders.dto';
 
 @Injectable()
 export class ProductsService {
@@ -234,6 +235,53 @@ export class ProductsService {
       }
       await manager.delete(ProductAttribute, { product: { id } });
       await manager.delete(Product, { id });
+    });
+  }
+
+  async updateAttributeOrders(
+    productId: number,
+    items: ProductAttributeOrderItemDto[],
+  ): Promise<ProductDto> {
+    return this.unitOfWork.execute(async (queryRunner) => {
+      const manager = queryRunner.manager;
+      const product = await manager.findOneBy(Product, { id: productId });
+      if (!product) {
+        throw new NotFoundException(`Product ${productId} no encontrado`);
+      }
+
+      const attributeIds = new Set<number>();
+      for (const item of items) {
+        if (attributeIds.has(item.attributeId)) {
+          throw new BadRequestException(
+            `El atributo ${item.attributeId} está repetido en el payload`,
+          );
+        }
+        attributeIds.add(item.attributeId);
+      }
+
+      const productAttributes = await manager.find(ProductAttribute, {
+        where: { product: { id: productId } },
+        relations: { attribute: true },
+      });
+      const attributesById = new Map(
+        productAttributes.map((item) => [item.attribute.id, item]),
+      );
+      const updatedAttributes: ProductAttribute[] = [];
+
+      for (const item of items) {
+        const productAttribute = attributesById.get(item.attributeId);
+        if (!productAttribute) {
+          throw new BadRequestException(
+            `El atributo ${item.attributeId} no pertenece al producto ${productId}`,
+          );
+        }
+        productAttribute.order = item.order;
+        updatedAttributes.push(productAttribute);
+      }
+
+      await manager.save(ProductAttribute, updatedAttributes);
+
+      return this.loadProductDto(manager, productId);
     });
   }
 
