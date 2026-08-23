@@ -69,6 +69,7 @@ export class ProductsService {
               product: savedProduct,
               attribute: { id: item.attributeId },
               attributeValue: { id: item.attributeValueId },
+              order: item.order,
             }),
           ),
         );
@@ -191,6 +192,7 @@ export class ProductsService {
                 product,
                 attribute: { id: item.attributeId },
                 attributeValue: { id: item.attributeValueId },
+                order: item.order,
               }),
             ),
           );

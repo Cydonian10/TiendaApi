@@ -1,7 +1,14 @@
-import { Entity, Index, ManyToOne, PrimaryGeneratedColumn } from 'typeorm';
+import {
+  Column,
+  Entity,
+  Index,
+  ManyToOne,
+  PrimaryGeneratedColumn,
+} from 'typeorm';
 import { Attribute } from '../../attributes/entities/attribute.entity';
 import { AttributeValue } from '../../attributes/entities/attribute-value.entity';
 import { Product } from './producto.entity';
+import { DecimalTransformer } from '@/common/transformers/decimal.transformer';
 
 @Entity('product_attribute')
 @Index('UQ_product_attribute_productId_attributeId', ['product', 'attribute'], {
@@ -21,4 +28,13 @@ export class ProductAttribute {
 
   @ManyToOne(() => AttributeValue, { nullable: false })
   attributeValue: AttributeValue;
+
+  @Column({
+    type: 'decimal',
+    precision: 10,
+    scale: 2,
+    default: 0,
+    transformer: new DecimalTransformer(),
+  })
+  order: number;
 }
