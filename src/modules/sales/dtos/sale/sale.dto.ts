@@ -10,8 +10,8 @@ export class SaleDetailDto {
   productId: number;
 
   @ApiProperty({
-    example: 'Tornillo - Color: Rojo, Tamaño: Grande',
-    description: 'Nombre del producto',
+    example: 'Tornillo',
+    description: 'Nombre del producto base',
   })
   productName: string;
 
@@ -31,7 +31,7 @@ export class SaleDetailDto {
     const dto = new SaleDetailDto();
     dto.id = detail.id;
     dto.productId = detail.product.id;
-    dto.productName = detail.product.name;
+    dto.productName = detail.product.baseProduct.name;
     dto.quantity = detail.quantity;
     dto.unitPrice = parseFloat(detail.unitPrice);
     dto.subtotal = parseFloat(detail.subtotal);

@@ -39,16 +39,10 @@ export class ProductsService {
         );
       }
 
-      const attributeParts = await this.validateAttributeItems(
-        manager,
-        dto.productAttributes,
-      );
-
-      const name = this.computeName(baseProduct.name, attributeParts);
+      await this.validateAttributeItems(manager, dto.productAttributes);
       const attributeKey = this.computeAttributeKey(dto.productAttributes);
 
       const product = manager.create(Product, {
-        name,
         stock: dto.stock.toFixed(2),
         price: dto.price.toFixed(2),
         attributeKey,
@@ -101,7 +95,8 @@ export class ProductsService {
       .take(filter.limit);
 
     if (filter.search) {
-      qb.andWhere('unaccent(LOWER(p.name)) ILIKE unaccent(LOWER(:search))', {
+      qb.leftJoin('p.baseProduct', 'bp');
+      qb.andWhere('unaccent(LOWER(bp.name)) ILIKE unaccent(LOWER(:search))', {
         search: `%${filter.search}%`,
       });
     }
@@ -183,13 +178,8 @@ export class ProductsService {
         product.baseProduct = baseProduct;
       }
 
-      let nameParts: { attributeName: string; attributeValue: string }[];
-
       if (dto.productAttributes !== undefined) {
-        nameParts = await this.validateAttributeItems(
-          manager,
-          dto.productAttributes,
-        );
+        await this.validateAttributeItems(manager, dto.productAttributes);
 
         await manager.delete(ProductAttribute, { product: { id } });
 
@@ -212,18 +202,8 @@ export class ProductsService {
           }
           throw error;
         }
-      } else {
-        const existing = await manager.find(ProductAttribute, {
-          where: { product: { id } },
-          relations: { attribute: true, attributeValue: true },
-        });
-        nameParts = existing.map((pa) => ({
-          attributeName: pa.attribute.name,
-          attributeValue: pa.attributeValue.value,
-        }));
       }
 
-      product.name = this.computeName(product.baseProduct.name, nameParts);
       if (dto.productAttributes !== undefined) {
         product.attributeKey = this.computeAttributeKey(dto.productAttributes);
       }
@@ -258,8 +238,7 @@ export class ProductsService {
   private async validateAttributeItems(
     manager: EntityManager,
     items: { attributeId: number; attributeValueId: number }[],
-  ): Promise<{ attributeName: string; attributeValue: string }[]> {
-    const parts: { attributeName: string; attributeValue: string }[] = [];
+  ): Promise<void> {
     for (const item of items) {
       const attribute = await manager.findOneBy(Attribute, {
         id: item.attributeId,
@@ -277,30 +256,7 @@ export class ProductsService {
           `El valor de atributo ${item.attributeValueId} no pertenece al atributo ${item.attributeId}`,
         );
       }
-      parts.push({
-        attributeName: attribute.name,
-        attributeValue: attributeValue.value,
-      });
     }
-    return parts;
-  }
-
-  private computeName(
-    baseName: string,
-    parts: { attributeName: string; attributeValue: string }[],
-  ): string {
-    const sorted = [...parts].sort((a, b) =>
-      a.attributeName.localeCompare(b.attributeName),
-    );
-    return (
-      baseName +
-      (sorted.length
-        ? ' - ' +
-          sorted
-            .map((p) => `${p.attributeName}: ${p.attributeValue}`)
-            .join(', ')
-        : '')
-    );
   }
 
   private computeAttributeKey(
