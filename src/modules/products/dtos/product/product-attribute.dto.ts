@@ -3,6 +3,7 @@ import { ApiProperty } from '@nestjs/swagger';
 interface ProductAttributeWithRelations {
   attribute: { id: number; name: string };
   attributeValue: { id: number; value: string };
+  order: number;
 }
 
 export class ProductAttributeDto {
@@ -18,12 +19,16 @@ export class ProductAttributeDto {
   @ApiProperty({ example: 'Rojo', description: 'Valor del atributo' })
   attributeValue: string;
 
+  @ApiProperty({ example: 1.5, description: 'Orden del atributo' })
+  order: number;
+
   static fromEntity(pa: ProductAttributeWithRelations): ProductAttributeDto {
     const dto = new ProductAttributeDto();
     dto.attributeId = pa.attribute.id;
     dto.attributeName = pa.attribute.name;
     dto.attributeValueId = pa.attributeValue.id;
     dto.attributeValue = pa.attributeValue.value;
+    dto.order = pa.order;
     return dto;
   }
 

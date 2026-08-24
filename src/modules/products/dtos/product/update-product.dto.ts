@@ -1,7 +1,6 @@
 import { ApiPropertyOptional } from '@nestjs/swagger';
 import { Type } from 'class-transformer';
 import {
-  ArrayNotEmpty,
   IsArray,
   IsNumber,
   IsOptional,
@@ -39,7 +38,6 @@ export class UpdateProductDto {
 
   @IsOptional()
   @IsArray()
-  @ArrayNotEmpty()
   @ValidateNested({ each: true })
   @Type(() => ProductAttributeItemDto)
   @ApiPropertyOptional({

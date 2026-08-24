@@ -18,6 +18,11 @@ export class ProductAttributeItemDto {
   @Type(() => Number)
   @ApiProperty({ example: 5, description: 'ID del valor del atributo' })
   attributeValueId: number;
+
+  @IsNumber()
+  @Type(() => Number)
+  @ApiProperty({ example: 1.5, description: 'Orden del atributo' })
+  order: number;
 }
 
 export class CreateProductDto {
