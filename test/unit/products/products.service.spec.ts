@@ -68,6 +68,45 @@ describe('ProductsService', () => {
     );
   });
 
+  it('updates a product without attributes when the replacement is empty', async () => {
+    const loadedProduct = {
+      id: 5,
+      stock: '10.00',
+      price: '1.50',
+      attributeKey: '1:10',
+      baseProduct: { id: 2, name: 'Tornillo', units: [] },
+      productAttributes: [],
+    } as unknown as Product;
+    const manager = {
+      findOne: jest
+        .fn()
+        .mockResolvedValueOnce({
+          id: 5,
+          stock: '10.00',
+          price: '1.50',
+          attributeKey: '1:10',
+          baseProduct: { id: 2, name: 'Tornillo', units: [] },
+          productAttributes: [],
+        })
+        .mockResolvedValueOnce(loadedProduct),
+      delete: jest.fn().mockResolvedValue(undefined),
+      save: jest.fn().mockResolvedValue(undefined),
+    };
+    const service = createService(manager);
+
+    const result = await service.update(5, { productAttributes: [] });
+
+    expect(manager.delete).toHaveBeenCalledWith(ProductAttribute, {
+      product: { id: 5 },
+    });
+    expect(manager.save).toHaveBeenNthCalledWith(1, ProductAttribute, []);
+    expect(manager.save).toHaveBeenNthCalledWith(
+      2,
+      expect.objectContaining({ attributeKey: '' }),
+    );
+    expect(result.productAttributes).toEqual([]);
+  });
+
   it('updates only the requested product attribute orders', async () => {
     const firstAttribute = {
       attribute: { id: 1, name: 'Color' },
