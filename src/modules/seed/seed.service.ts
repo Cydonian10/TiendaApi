@@ -135,21 +135,25 @@ export class SeedService {
           product: nail.product,
           attribute: color,
           attributeValue: red,
+          order: 1,
         });
         await manager.save(ProductAttribute, {
           product: nail.product,
           attribute: size,
           attributeValue: large,
+          order: 2,
         });
         await manager.save(ProductAttribute, {
           product: screw.product,
           attribute: color,
           attributeValue: blue,
+          order: 1,
         });
         await manager.save(ProductAttribute, {
           product: screw.product,
           attribute: size,
           attributeValue: small,
+          order: 2,
         });
 
         return {
