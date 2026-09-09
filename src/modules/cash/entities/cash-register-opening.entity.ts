@@ -30,6 +30,9 @@ export class CashRegisterOpening {
   @ManyToOne(() => Person, { nullable: false })
   openedBy: Person;
 
+  @ManyToOne(() => Person, { nullable: true })
+  closedBy: Person | null;
+
   @Column({ type: 'timestamp', default: () => 'CURRENT_TIMESTAMP' })
   openedAt: Date;
 

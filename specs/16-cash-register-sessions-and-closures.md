@@ -1,6 +1,6 @@
 # SPEC 16 — Gestión de caja, sesiones y cierres por método de pago
 
-> **Status:** Draft
+> **Status:** Implementado
 > **Depends on:** SPEC 12 (autenticación y guards)
 > **Date:** 2026-09-07
 > **Objective:** Implementar la operación de cajas con apertura, movimientos, ventas de pago único, cierre auditado y arqueo por cada método de pago activo.
@@ -173,12 +173,12 @@ Para cualquier otro método activo, `expectedAmount` es la suma de `SalePayment.
 
 ## Risks
 
-| Risk | Mitigation |
-| --- | --- |
-| Dos solicitudes intentan abrir la misma caja al mismo tiempo. | Validar en transacción y respaldar la regla con una restricción de unicidad parcial para sesiones `open` si TypeORM/Postgres lo permite en la migración. |
-| El método `Efectivo` se renombra o desactiva y altera el cálculo físico. | Garantizar su existencia y estado activo; impedir su desactivación mientras sea el método de efectivo configurado. |
-| Una operación falla tras crear datos de venta, pago o cierre. | Ejecutar cada operación compuesta dentro de `UnitOfWork` para aplicar rollback total. |
-| Los datos existentes tienen varias filas `sale_payment` para una venta. | Revisar y resolver esos datos antes de aplicar la restricción única en el entorno destino. |
+| Risk                                                                     | Mitigation                                                                                                                                               |
+| ------------------------------------------------------------------------ | -------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Dos solicitudes intentan abrir la misma caja al mismo tiempo.            | Validar en transacción y respaldar la regla con una restricción de unicidad parcial para sesiones `open` si TypeORM/Postgres lo permite en la migración. |
+| El método `Efectivo` se renombra o desactiva y altera el cálculo físico. | Garantizar su existencia y estado activo; impedir su desactivación mientras sea el método de efectivo configurado.                                       |
+| Una operación falla tras crear datos de venta, pago o cierre.            | Ejecutar cada operación compuesta dentro de `UnitOfWork` para aplicar rollback total.                                                                    |
+| Los datos existentes tienen varias filas `sale_payment` para una venta.  | Revisar y resolver esos datos antes de aplicar la restricción única en el entorno destino.                                                               |
 
 ## What is **not** in this spec
 
