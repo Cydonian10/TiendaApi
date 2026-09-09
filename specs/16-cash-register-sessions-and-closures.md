@@ -1,6 +1,6 @@
 # SPEC 16 — Gestión de caja, sesiones y cierres por método de pago
 
-> **Status:** Aprobado
+> **Status:** Implementado
 > **Depends on:** SPEC 12 (autenticación y guards)
 > **Date:** 2026-09-07
 > **Objective:** Implementar la operación de cajas con apertura, movimientos, ventas de pago único, cierre auditado y arqueo por cada método de pago activo.
