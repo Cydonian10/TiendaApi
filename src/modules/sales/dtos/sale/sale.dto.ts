@@ -2,6 +2,20 @@ import { ApiProperty } from '@nestjs/swagger';
 import { SaleDetail } from '../../entities/sale-detail.entity';
 import { Sale } from '../../entities/sale.entity';
 
+export class SalePaymentDto {
+  @ApiProperty({ example: 1, description: 'ID del método de pago' })
+  paymentMethodId: number;
+
+  @ApiProperty({
+    example: 'Efectivo',
+    description: 'Nombre del método de pago',
+  })
+  paymentMethodName: string;
+
+  @ApiProperty({ example: 12.5, description: 'Monto pagado' })
+  amount: number;
+}
+
 export class SaleDetailDto {
   @ApiProperty({ example: 1, description: 'ID del detalle' })
   id: number;
@@ -73,6 +87,12 @@ export class SaleDto {
   @ApiProperty({ example: 12.5, description: 'Total de la venta' })
   totalAmount: number;
 
+  @ApiProperty({ example: 1, description: 'ID de la sesión de caja' })
+  cashOpeningId: number;
+
+  @ApiProperty({ type: () => SalePaymentDto })
+  payment: SalePaymentDto;
+
   @ApiProperty({
     type: () => [SaleDetailDto],
     description: 'Líneas de la venta',
@@ -89,6 +109,12 @@ export class SaleDto {
     dto.sellerName = `${sale.seller.firstName} ${sale.seller.lastName}`;
     dto.discount = parseFloat(sale.discount);
     dto.totalAmount = parseFloat(sale.totalAmount);
+    dto.cashOpeningId = sale.cashOpening.id;
+    dto.payment = {
+      paymentMethodId: sale.payment.paymentMethod.id,
+      paymentMethodName: sale.payment.paymentMethod.name,
+      amount: parseFloat(sale.payment.amount),
+    };
     dto.details = (sale.details ?? []).map((d) => SaleDetailDto.fromEntity(d));
     return dto;
   }
