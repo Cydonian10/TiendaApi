@@ -4,6 +4,7 @@ import {
   Entity,
   ManyToOne,
   OneToMany,
+  OneToOne,
   PrimaryGeneratedColumn,
 } from 'typeorm';
 import { Person } from '@/modules/people/entities/person.entity';
@@ -36,8 +37,8 @@ export class Sale {
   @OneToMany(() => SaleDetail, (detail) => detail.sale, { cascade: true })
   details: SaleDetail[];
 
-  @OneToMany(() => SalePayment, (payment) => payment.sale, { cascade: true })
-  payments: SalePayment[];
+  @OneToOne(() => SalePayment, (payment) => payment.sale, { cascade: true })
+  payment: SalePayment;
 
   @ManyToOne(() => CashRegisterOpening, (opening) => opening.sales, {
     nullable: false,

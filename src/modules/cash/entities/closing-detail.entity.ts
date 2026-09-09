@@ -20,4 +20,7 @@ export class ClosingDetail {
 
   @Column({ type: 'decimal', precision: 10, scale: 2 })
   realAmount: string;
+
+  @Column({ type: 'decimal', precision: 10, scale: 2 })
+  difference: string;
 }

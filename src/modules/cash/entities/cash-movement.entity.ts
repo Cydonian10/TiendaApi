@@ -1,5 +1,6 @@
 import { Column, Entity, ManyToOne, PrimaryGeneratedColumn } from 'typeorm';
 import { CashRegisterOpening } from './cash-register-opening.entity';
+import { Person } from '@/modules/people/entities/person.entity';
 
 export enum CashMovementType {
   INCOME = 'income',
@@ -22,8 +23,11 @@ export class CashMovement {
   @Column({ type: 'decimal', precision: 10, scale: 2 })
   amount: string;
 
-  @Column({ type: 'varchar', length: 255, nullable: true })
-  reason: string | null;
+  @Column({ type: 'varchar', length: 255 })
+  reason: string;
+
+  @ManyToOne(() => Person, { nullable: false })
+  createdBy: Person;
 
   @Column({ type: 'timestamp', default: () => 'CURRENT_TIMESTAMP' })
   createdAt: Date;

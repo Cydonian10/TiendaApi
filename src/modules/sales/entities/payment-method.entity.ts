@@ -15,6 +15,9 @@ export class PaymentMethod {
   @Column({ type: 'varchar', length: 50, unique: true })
   name: string;
 
+  @Column({ type: 'boolean', default: true })
+  active: boolean;
+
   @OneToMany(() => SalePayment, (payment) => payment.paymentMethod)
   salePayments: SalePayment[];
 

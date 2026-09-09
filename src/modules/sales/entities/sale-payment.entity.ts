@@ -1,4 +1,11 @@
-import { Column, Entity, ManyToOne, PrimaryGeneratedColumn } from 'typeorm';
+import {
+  Column,
+  Entity,
+  JoinColumn,
+  ManyToOne,
+  OneToOne,
+  PrimaryGeneratedColumn,
+} from 'typeorm';
 import { Sale } from './sale.entity';
 import { PaymentMethod } from './payment-method.entity';
 
@@ -7,7 +14,8 @@ export class SalePayment {
   @PrimaryGeneratedColumn()
   id: number;
 
-  @ManyToOne(() => Sale, (sale) => sale.payments, { nullable: false })
+  @OneToOne(() => Sale, (sale) => sale.payment, { nullable: false })
+  @JoinColumn()
   sale: Sale;
 
   @ManyToOne(() => PaymentMethod, (method) => method.salePayments, {
