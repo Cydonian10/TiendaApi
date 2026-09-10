@@ -6,6 +6,7 @@ import {
   ParseIntPipe,
   Patch,
   Post,
+  Query,
 } from '@nestjs/common';
 import {
   ApiBearerAuth,
@@ -18,6 +19,7 @@ import type { JwtUser } from '@/modules/auth/decorators/current-user.decorator';
 import { Roles } from '@/modules/auth/decorators/roles.decorator';
 import { CloseCashRegisterOpeningDto } from '../dtos/cash-register-opening/close-cash-register-opening.dto';
 import { CreateCashRegisterOpeningDto } from '../dtos/cash-register-opening/create-cash-register-opening.dto';
+import { FilterCashRegisterOpeningsDto } from '../dtos/cash-register-opening/filter-cash-register-openings.dto';
 import { CashRegisterOpeningsService } from '../services/cash-register-openings.service';
 import { CashRegisterOpeningDto } from '../dtos/cash-response.dto';
 
@@ -41,9 +43,9 @@ export class CashRegisterOpeningsController {
 
   @Get()
   @ApiOkResponse({ type: () => [CashRegisterOpeningDto] })
-  findAll() {
+  findAll(@Query() filter: FilterCashRegisterOpeningsDto) {
     return this.openingsService
-      .findAll()
+      .findAll(filter)
       .then((openings) =>
         openings.map((opening) => CashRegisterOpeningDto.fromEntity(opening)),
       );

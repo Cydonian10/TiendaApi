@@ -12,6 +12,9 @@ export class CashRegister {
   @PrimaryGeneratedColumn()
   id: number;
 
+  @Column({ type: 'varchar', length: 100, unique: true })
+  code: string;
+
   @Column({ type: 'varchar', length: 100 })
   name: string;
 
@@ -20,6 +23,8 @@ export class CashRegister {
 
   @OneToMany(() => CashRegisterOpening, (opening) => opening.cashRegister)
   openings: CashRegisterOpening[];
+
+  openOpening?: CashRegisterOpening | null;
 
   @DeleteDateColumn({ type: 'timestamp' })
   deletedAt: Date | null;

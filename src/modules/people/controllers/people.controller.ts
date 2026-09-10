@@ -10,7 +10,9 @@ import {
   Post,
   Query,
 } from '@nestjs/common';
-import { ApiTags } from '@nestjs/swagger';
+import { ApiBearerAuth, ApiOkResponse, ApiTags } from '@nestjs/swagger';
+import { Roles } from '@/modules/auth/decorators/roles.decorator';
+import { CashResponsibleDto } from '@/modules/cash/dtos/cash-response.dto';
 import { PeopleService } from '../services/people.service';
 import { CreatePersonDto } from '../dtos/person/create-person.dto';
 import { UpdatePersonDto } from '../dtos/person/update-person.dto';
@@ -18,6 +20,7 @@ import { FilterPersonDto } from '../dtos/person/filter-person.dto';
 import { PersonDto } from '../dtos/person/person.dto';
 
 @ApiTags('People')
+@ApiBearerAuth()
 @Controller('people')
 export class PeopleController {
   constructor(private readonly peopleService: PeopleService) {}
@@ -30,6 +33,13 @@ export class PeopleController {
   @Get()
   findAll(@Query() filter: FilterPersonDto) {
     return this.peopleService.findAll(filter);
+  }
+
+  @Get('cash-responsibles')
+  @Roles('ADMINISTRADOR')
+  @ApiOkResponse({ type: () => [CashResponsibleDto] })
+  findCashResponsibles(): Promise<CashResponsibleDto[]> {
+    return this.peopleService.findCashResponsibles();
   }
 
   @Get(':id')
