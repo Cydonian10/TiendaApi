@@ -404,6 +404,42 @@ describe('PeopleService', () => {
     });
   });
 
+  describe('findCashResponsibles', () => {
+    it('returns only distinct operational people with an access account', async () => {
+      const queryBuilder = {
+        innerJoin: jest.fn().mockReturnThis(),
+        where: jest.fn().mockReturnThis(),
+        distinct: jest.fn().mockReturnThis(),
+        orderBy: jest.fn().mockReturnThis(),
+        addOrderBy: jest.fn().mockReturnThis(),
+        getMany: jest
+          .fn()
+          .mockResolvedValue([{ id: 1, firstName: 'Ana', lastName: 'Pérez' }]),
+      };
+      const repository = {
+        createQueryBuilder: jest.fn().mockReturnValue(queryBuilder),
+      };
+      const service = new PeopleService(repository as never, {} as never);
+
+      await expect(service.findCashResponsibles()).resolves.toEqual([
+        { id: 1, firstName: 'Ana', lastName: 'Pérez' },
+      ]);
+      expect(queryBuilder.innerJoin).toHaveBeenCalledWith(
+        'person.auth',
+        'auth',
+      );
+      expect(queryBuilder.innerJoin).toHaveBeenCalledWith(
+        'person.roles',
+        'role',
+      );
+      expect(queryBuilder.where).toHaveBeenCalledWith(
+        'role.name IN (:...roles)',
+        { roles: ['TRABAJADOR', 'ADMINISTRADOR'] },
+      );
+      expect(queryBuilder.distinct).toHaveBeenCalledWith(true);
+    });
+  });
+
   describe('update', () => {
     it('updates only provided fields', async () => {
       const updated = { ...personEntity, firstName: 'Carlos' };

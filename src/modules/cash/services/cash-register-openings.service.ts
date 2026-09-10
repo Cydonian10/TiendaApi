@@ -7,7 +7,9 @@ import {
 } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { EntityManager, Repository } from 'typeorm';
+import { DateTime } from 'luxon';
 import { UnitOfWork } from '@/database/unitOfWork';
+import { BUSINESS_TIME_ZONE } from '@/common/constants/business-time-zone';
 import { isUniqueViolation } from '@/common/utils/pg-errors';
 import type { JwtUser } from '@/modules/auth/decorators/current-user.decorator';
 import { Person } from '@/modules/people/entities/person.entity';
@@ -25,6 +27,9 @@ import {
 import { ClosingDetail } from '../entities/closing-detail.entity';
 import { CloseCashRegisterOpeningDto } from '../dtos/cash-register-opening/close-cash-register-opening.dto';
 import { CreateCashRegisterOpeningDto } from '../dtos/cash-register-opening/create-cash-register-opening.dto';
+import { FilterCashRegisterOpeningsDto } from '../dtos/cash-register-opening/filter-cash-register-openings.dto';
+
+const STAFF_ROLES = ['TRABAJADOR', 'ADMINISTRADOR'];
 
 type AmountRow = { paymentMethodId?: number; amount?: string };
 
@@ -54,6 +59,9 @@ export class CashRegisterOpeningsService {
         throw new BadRequestException('No se puede abrir una caja inactiva');
       }
       const openedBy = await this.findPersonOrThrow(manager, user.personId);
+      const responsible = user.roles.includes('TRABAJADOR')
+        ? openedBy
+        : await this.findCashResponsibleOrThrow(manager, dto.responsibleId);
       const existing = await manager.findOneBy(CashRegisterOpening, {
         cashRegister: { id: register.id },
         status: CashOpeningStatus.OPEN,
@@ -66,6 +74,7 @@ export class CashRegisterOpeningsService {
           manager.create(CashRegisterOpening, {
             cashRegister: register,
             openedBy,
+            responsible,
             openingAmount: this.round2(dto.openingAmount),
           }),
         );
@@ -78,11 +87,38 @@ export class CashRegisterOpeningsService {
     });
   }
 
-  findAll(): Promise<CashRegisterOpening[]> {
-    return this.openingRepository.find({
-      relations: { cashRegister: true, openedBy: true, closedBy: true },
-      order: { id: 'DESC' },
-    });
+  findAll(
+    filter: FilterCashRegisterOpeningsDto,
+  ): Promise<CashRegisterOpening[]> {
+    const startsAt = DateTime.fromObject(
+      { year: filter.year, month: filter.month, day: 1 },
+      { zone: BUSINESS_TIME_ZONE },
+    )
+      .startOf('day')
+      .toUTC()
+      .toJSDate();
+    const endsAt = DateTime.fromObject(
+      { year: filter.year, month: filter.month, day: 1 },
+      { zone: BUSINESS_TIME_ZONE },
+    )
+      .plus({ months: 1 })
+      .startOf('day')
+      .toUTC()
+      .toJSDate();
+
+    return this.openingRepository
+      .createQueryBuilder('opening')
+      .leftJoinAndSelect('opening.cashRegister', 'cashRegister')
+      .leftJoinAndSelect('opening.openedBy', 'openedBy')
+      .leftJoinAndSelect('opening.responsible', 'responsible')
+      .leftJoinAndSelect('opening.closedBy', 'closedBy')
+      .where('cashRegister.id = :cashRegisterId', {
+        cashRegisterId: filter.cashRegisterId,
+      })
+      .andWhere('opening.openedAt >= :startsAt', { startsAt })
+      .andWhere('opening.openedAt < :endsAt', { endsAt })
+      .orderBy('opening.openedAt', 'DESC')
+      .getMany();
   }
 
   async findOne(id: number): Promise<CashRegisterOpening> {
@@ -91,6 +127,7 @@ export class CashRegisterOpeningsService {
       relations: {
         cashRegister: true,
         openedBy: true,
+        responsible: true,
         closedBy: true,
         closingDetails: { paymentMethod: true },
       },
@@ -246,6 +283,30 @@ export class CashRegisterOpeningsService {
     return person;
   }
 
+  private async findCashResponsibleOrThrow(
+    manager: EntityManager,
+    id: number | undefined,
+  ): Promise<Person> {
+    if (!id) {
+      throw new BadRequestException(
+        'Un ADMINISTRADOR debe indicar un responsable operativo',
+      );
+    }
+    const person = await manager
+      .createQueryBuilder(Person, 'person')
+      .innerJoin('person.auth', 'auth')
+      .innerJoin('person.roles', 'role')
+      .where('person.id = :id', { id })
+      .andWhere('role.name IN (:...roles)', { roles: STAFF_ROLES })
+      .getOne();
+    if (!person) {
+      throw new BadRequestException(
+        'El responsable no es una persona operativa',
+      );
+    }
+    return person;
+  }
+
   private async findOneWithDetails(
     manager: EntityManager,
     id: number,
@@ -255,6 +316,7 @@ export class CashRegisterOpeningsService {
       relations: {
         cashRegister: true,
         openedBy: true,
+        responsible: true,
         closedBy: true,
         closingDetails: { paymentMethod: true },
       },

@@ -1,6 +1,6 @@
-import { ApiProperty } from '@nestjs/swagger';
+import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 import { Type } from 'class-transformer';
-import { IsInt, IsNumber, IsPositive, Min } from 'class-validator';
+import { IsInt, IsNumber, IsOptional, IsPositive, Min } from 'class-validator';
 
 export class CreateCashRegisterOpeningDto {
   @IsInt()
@@ -14,4 +14,11 @@ export class CreateCashRegisterOpeningDto {
   @Type(() => Number)
   @ApiProperty({ example: 100, description: 'Monto inicial de apertura' })
   openingAmount: number;
+
+  @IsOptional()
+  @IsInt()
+  @IsPositive()
+  @Type(() => Number)
+  @ApiPropertyOptional({ example: 1, description: 'ID del responsable' })
+  responsibleId?: number;
 }

@@ -13,6 +13,8 @@ import {
   ApiOkResponse,
   ApiTags,
 } from '@nestjs/swagger';
+import { CurrentUser } from '@/modules/auth/decorators/current-user.decorator';
+import type { JwtUser } from '@/modules/auth/decorators/current-user.decorator';
 import { Roles } from '@/modules/auth/decorators/roles.decorator';
 import { CreateCashRegisterDto } from '../dtos/cash-register/create-cash-register.dto';
 import { UpdateCashRegisterDto } from '../dtos/cash-register/update-cash-register.dto';
@@ -21,22 +23,23 @@ import { CashRegisterDto } from '../dtos/cash-response.dto';
 
 @ApiTags('Cash Registers')
 @ApiBearerAuth()
-@Roles('ADMINISTRADOR')
 @Controller('cash-registers')
 export class CashRegistersController {
   constructor(private readonly cashRegistersService: CashRegistersService) {}
 
   @Get()
+  @Roles('ADMINISTRADOR', 'TRABAJADOR')
   @ApiOkResponse({ type: () => [CashRegisterDto] })
-  findAll() {
+  findAll(@CurrentUser() user: JwtUser) {
     return this.cashRegistersService
-      .findAll()
+      .findAll(user.roles)
       .then((registers) =>
         registers.map((register) => CashRegisterDto.fromEntity(register)),
       );
   }
 
   @Post()
+  @Roles('ADMINISTRADOR')
   @ApiCreatedResponse({ type: CashRegisterDto })
   create(@Body() dto: CreateCashRegisterDto) {
     return this.cashRegistersService
@@ -45,6 +48,7 @@ export class CashRegistersController {
   }
 
   @Patch(':id')
+  @Roles('ADMINISTRADOR')
   @ApiOkResponse({ type: CashRegisterDto })
   update(
     @Param('id', ParseIntPipe) id: number,
@@ -56,6 +60,7 @@ export class CashRegistersController {
   }
 
   @Patch(':id/deactivate')
+  @Roles('ADMINISTRADOR')
   @ApiOkResponse({ type: CashRegisterDto })
   deactivate(@Param('id', ParseIntPipe) id: number) {
     return this.cashRegistersService

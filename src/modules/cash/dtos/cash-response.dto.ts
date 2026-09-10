@@ -1,13 +1,68 @@
 import { ApiProperty } from '@nestjs/swagger';
 import { CashMovement } from '../entities/cash-movement.entity';
 import { CashRegister } from '../entities/cash-register.entity';
-import { CashRegisterOpening } from '../entities/cash-register-opening.entity';
+import {
+  CashOpeningStatus,
+  CashRegisterOpening,
+} from '../entities/cash-register-opening.entity';
 import { ClosingDetail } from '../entities/closing-detail.entity';
 import { PaymentMethod } from '@/modules/sales/entities/payment-method.entity';
+import { Person } from '@/modules/people/entities/person.entity';
+
+export class CashResponsibleDto {
+  @ApiProperty({ example: 1 })
+  id: number;
+
+  @ApiProperty({ example: 'Ana' })
+  firstName: string;
+
+  @ApiProperty({ example: 'Pérez' })
+  lastName: string;
+
+  static fromEntity(person: Person): CashResponsibleDto {
+    return Object.assign(new CashResponsibleDto(), {
+      id: person.id,
+      firstName: person.firstName,
+      lastName: person.lastName,
+    });
+  }
+}
+
+export class CashRegisterOpeningSummaryDto {
+  @ApiProperty({ example: 1 })
+  id: number;
+
+  @ApiProperty({ example: '2026-09-09T10:00:00.000Z' })
+  openedAt: Date;
+
+  @ApiProperty({ example: 100 })
+  openingAmount: number;
+
+  @ApiProperty({ example: 'open', enum: ['open'] })
+  status: CashOpeningStatus.OPEN;
+
+  @ApiProperty({ type: () => CashResponsibleDto })
+  responsible: CashResponsibleDto;
+
+  static fromEntity(
+    opening: CashRegisterOpening,
+  ): CashRegisterOpeningSummaryDto {
+    return Object.assign(new CashRegisterOpeningSummaryDto(), {
+      id: opening.id,
+      openedAt: opening.openedAt,
+      openingAmount: Number(opening.openingAmount),
+      status: CashOpeningStatus.OPEN,
+      responsible: CashResponsibleDto.fromEntity(opening.responsible),
+    });
+  }
+}
 
 export class CashRegisterDto {
   @ApiProperty({ example: 1 })
   id: number;
+
+  @ApiProperty({ example: 'CAJA-01' })
+  code: string;
 
   @ApiProperty({ example: 'Caja principal' })
   name: string;
@@ -15,11 +70,18 @@ export class CashRegisterDto {
   @ApiProperty({ example: true })
   active: boolean;
 
+  @ApiProperty({ type: () => CashRegisterOpeningSummaryDto, nullable: true })
+  openOpening: CashRegisterOpeningSummaryDto | null;
+
   static fromEntity(register: CashRegister): CashRegisterDto {
     return Object.assign(new CashRegisterDto(), {
       id: register.id,
+      code: register.code,
       name: register.name,
       active: register.active,
+      openOpening: register.openOpening
+        ? CashRegisterOpeningSummaryDto.fromEntity(register.openOpening)
+        : null,
     });
   }
 }
@@ -76,11 +138,20 @@ export class CashRegisterOpeningDto {
   @ApiProperty({ example: 1 })
   openedById: number;
 
+  @ApiProperty({ type: () => CashResponsibleDto })
+  openedBy: CashResponsibleDto;
+
+  @ApiProperty({ type: () => CashResponsibleDto })
+  responsible: CashResponsibleDto;
+
   @ApiProperty({ example: 1, nullable: true })
   closedById: number | null;
 
   @ApiProperty({ example: 'open', enum: ['open', 'closed'] })
   status: string;
+
+  @ApiProperty({ example: '2026-09-09T10:00:00.000Z' })
+  openedAt: Date;
 
   @ApiProperty({ example: 100 })
   openingAmount: number;
@@ -102,8 +173,11 @@ export class CashRegisterOpeningDto {
       id: opening.id,
       cashRegister: CashRegisterDto.fromEntity(opening.cashRegister),
       openedById: opening.openedBy.id,
+      openedBy: CashResponsibleDto.fromEntity(opening.openedBy),
+      responsible: CashResponsibleDto.fromEntity(opening.responsible),
       closedById: opening.closedBy?.id ?? null,
       status: opening.status,
+      openedAt: opening.openedAt,
       openingAmount: Number(opening.openingAmount),
       expectedAmount: Number(opening.expectedAmount),
       realAmount:

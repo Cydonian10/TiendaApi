@@ -5,6 +5,12 @@ export class CreateCashRegisterDto {
   @IsString()
   @IsNotEmpty()
   @MaxLength(100)
+  @ApiProperty({ example: 'CAJA-01' })
+  code: string;
+
+  @IsString()
+  @IsNotEmpty()
+  @MaxLength(100)
   @ApiProperty({ example: 'Caja principal' })
   name: string;
 }

@@ -17,6 +17,7 @@ import { PaginatedResult } from '@/common/interfaces/paginated-result';
 import { UnitOfWork } from '@/database/unitOfWork';
 import { isUniqueViolation } from '@/common/utils/pg-errors';
 import { hashPassword } from '@/common/utils/password';
+import { CashResponsibleDto } from '@/modules/cash/dtos/cash-response.dto';
 
 const STAFF_ROLES = ['TRABAJADOR', 'ADMINISTRADOR'];
 
@@ -105,6 +106,21 @@ export class PeopleService {
       throw new NotFoundException(`Person ${id} no encontrada`);
     }
     return PersonDto.fromEntity(person);
+  }
+
+  async findCashResponsibles(): Promise<CashResponsibleDto[]> {
+    const people = await this.personRepository
+      .createQueryBuilder('person')
+      .innerJoin('person.auth', 'auth')
+      .innerJoin('person.roles', 'role')
+      .where('role.name IN (:...roles)', { roles: STAFF_ROLES })
+      .distinct(true)
+      .orderBy('person.firstName', 'ASC')
+      .addOrderBy('person.lastName', 'ASC')
+      .addOrderBy('person.id', 'ASC')
+      .getMany();
+
+    return people.map((person) => CashResponsibleDto.fromEntity(person));
   }
 
   async update(id: number, dto: UpdatePersonDto): Promise<PersonDto> {
