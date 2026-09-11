@@ -322,8 +322,20 @@ describe('Cash services', () => {
     );
   });
 
-  it('rejects a sale whose single payment differs from its final total', async () => {
-    const queryBuilder = {
+  it('rejects payment when its amount differs from a pending sale total', async () => {
+    const saleQueryBuilder = {
+      leftJoinAndSelect: jest.fn().mockReturnThis(),
+      setLock: jest.fn().mockReturnThis(),
+      where: jest.fn().mockReturnThis(),
+      getOne: jest.fn().mockResolvedValue({
+        id: 1,
+        status: 'PENDING',
+        totalAmount: '20.00',
+        cashOpening: { id: 1, status: CashOpeningStatus.OPEN },
+        details: [],
+      }),
+    };
+    const openingQueryBuilder = {
       setLock: jest.fn().mockReturnThis(),
       where: jest.fn().mockReturnThis(),
       getOne: jest
@@ -331,37 +343,16 @@ describe('Cash services', () => {
         .mockResolvedValue({ id: 1, status: CashOpeningStatus.OPEN }),
     };
     const manager = {
-      createQueryBuilder: jest.fn().mockReturnValue(queryBuilder),
-      findOneBy: jest
+      createQueryBuilder: jest
         .fn()
-        .mockResolvedValueOnce({ id: 2 })
-        .mockResolvedValueOnce({ id: 1 })
-        .mockResolvedValueOnce({ id: 1, active: true }),
-      findOne: jest.fn().mockResolvedValue({
-        id: 1,
-        price: '10.00',
-        baseProduct: {
-          name: 'Tornillo',
-          units: [{ isMain: true, unit: { id: 1 } }],
-        },
-      }),
+        .mockReturnValueOnce(saleQueryBuilder)
+        .mockReturnValueOnce(openingQueryBuilder),
+      findOneBy: jest.fn().mockResolvedValue({ id: 1, active: true }),
     };
-    const service = new SalesService(
-      {} as never,
-      {} as never,
-      unitOfWork(manager),
-    );
+    const service = new SalesService({} as never, unitOfWork(manager));
 
     await expect(
-      service.create(
-        {
-          cashOpeningId: 1,
-          customerId: 2,
-          details: [{ productId: 1, quantity: 2 }],
-          payment: { paymentMethodId: 1, amount: 19 },
-        },
-        worker,
-      ),
+      service.pay(1, { paymentMethodId: 1, amount: 19 }),
     ).rejects.toBeInstanceOf(BadRequestException);
   });
 });

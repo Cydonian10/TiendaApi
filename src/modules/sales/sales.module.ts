@@ -7,6 +7,7 @@ import { PaymentMethod } from './entities/payment-method.entity';
 import { Product } from '@/modules/products/entities/producto.entity';
 import { MeasurementUnit } from '@/modules/measurement-units/entities/measurement-unit.entity';
 import { CashRegisterOpening } from '@/modules/cash/entities/cash-register-opening.entity';
+import { CashMovement } from '@/modules/cash/entities/cash-movement.entity';
 import { SalesService } from './services/sales.service';
 import { SalesController } from './controllers/sales.controller';
 
@@ -20,6 +21,7 @@ import { SalesController } from './controllers/sales.controller';
       Product,
       MeasurementUnit,
       CashRegisterOpening,
+      CashMovement,
     ]),
   ],
   controllers: [SalesController],

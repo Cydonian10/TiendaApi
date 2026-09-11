@@ -13,7 +13,10 @@ import { BUSINESS_TIME_ZONE } from '@/common/constants/business-time-zone';
 import { isUniqueViolation } from '@/common/utils/pg-errors';
 import type { JwtUser } from '@/modules/auth/decorators/current-user.decorator';
 import { Person } from '@/modules/people/entities/person.entity';
-import { SalePayment } from '@/modules/sales/entities/sale-payment.entity';
+import {
+  SalePayment,
+  SalePaymentStatus,
+} from '@/modules/sales/entities/sale-payment.entity';
 import { PaymentMethod } from '@/modules/sales/entities/payment-method.entity';
 import {
   CashMovement,
@@ -239,6 +242,9 @@ export class CashRegisterOpeningsService {
       .select('payment."paymentMethodId"', 'paymentMethodId')
       .addSelect('COALESCE(SUM(payment.amount), 0)', 'amount')
       .where('sale."cashOpeningId" = :openingId', { openingId })
+      .andWhere('payment.status = :paymentStatus', {
+        paymentStatus: SalePaymentStatus.PAID,
+      })
       .groupBy('payment."paymentMethodId"')
       .getRawMany<AmountRow>();
     return new Map(
