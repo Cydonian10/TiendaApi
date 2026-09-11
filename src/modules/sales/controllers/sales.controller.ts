@@ -56,17 +56,25 @@ export class SalesController {
 
   @Patch(':id')
   @ApiOkResponse({ type: SaleDto })
-  update(@Param('id', ParseIntPipe) id: number, @Body() dto: UpdateSaleDto) {
+  update(
+    @Param('id', ParseIntPipe) id: number,
+    @Body() dto: UpdateSaleDto,
+    @CurrentUser() user: JwtUser,
+  ) {
     return this.salesService
-      .update(id, dto)
+      .update(id, dto, user)
       .then((sale) => SaleDto.fromEntity(sale));
   }
 
   @Post(':id/pay')
   @ApiOkResponse({ type: SaleDto })
-  pay(@Param('id', ParseIntPipe) id: number, @Body() dto: PaySaleDto) {
+  pay(
+    @Param('id', ParseIntPipe) id: number,
+    @Body() dto: PaySaleDto,
+    @CurrentUser() user: JwtUser,
+  ) {
     return this.salesService
-      .pay(id, dto)
+      .pay(id, dto, user)
       .then((sale) => SaleDto.fromEntity(sale));
   }
 

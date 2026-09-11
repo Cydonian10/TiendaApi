@@ -51,6 +51,7 @@ export class SalesService {
         dto.cashOpeningId,
         true,
       );
+      this.assertOpeningResponsible(opening, user);
       const customer = await this.findPersonOrThrow(manager, dto.customerId);
       const seller = await this.findPersonOrThrow(manager, user.personId);
       const sale = await manager.save(
@@ -68,12 +69,17 @@ export class SalesService {
     });
   }
 
-  async update(id: number, dto: UpdateSaleDto): Promise<Sale> {
+  async update(id: number, dto: UpdateSaleDto, user: JwtUser): Promise<Sale> {
     return this.unitOfWork.execute(async (queryRunner) => {
       const manager = queryRunner.manager;
       const sale = await this.findSaleForUpdateOrThrow(manager, id);
       this.assertPending(sale);
-      await this.findOpenOpeningOrThrow(manager, sale.cashOpening.id, true);
+      const opening = await this.findOpenOpeningOrThrow(
+        manager,
+        sale.cashOpening.id,
+        true,
+      );
+      this.assertOpeningResponsible(opening, user);
 
       if (dto.customerId !== undefined) {
         sale.customer = await this.findPersonOrThrow(manager, dto.customerId);
@@ -90,12 +96,17 @@ export class SalesService {
     });
   }
 
-  async pay(id: number, dto: PaySaleDto): Promise<Sale> {
+  async pay(id: number, dto: PaySaleDto, user: JwtUser): Promise<Sale> {
     return this.unitOfWork.execute(async (queryRunner) => {
       const manager = queryRunner.manager;
       const sale = await this.findSaleForUpdateOrThrow(manager, id);
       this.assertPending(sale);
-      await this.findOpenOpeningOrThrow(manager, sale.cashOpening.id, true);
+      const opening = await this.findOpenOpeningOrThrow(
+        manager,
+        sale.cashOpening.id,
+        true,
+      );
+      this.assertOpeningResponsible(opening, user);
 
       const paymentMethod = await manager.findOneBy(PaymentMethod, {
         id: dto.paymentMethodId,
@@ -134,14 +145,14 @@ export class SalesService {
         product.stock = this.round2(Number(product.stock) - quantity);
       }
       await manager.save(products);
-      await manager.save(
-        manager.create(SalePayment, {
-          sale,
-          paymentMethod,
-          amount: sale.totalAmount,
-          status: SalePaymentStatus.PAID,
-        }),
-      );
+      const payment = manager.create(SalePayment, {
+        sale,
+        paymentMethod,
+        amount: sale.totalAmount,
+        status: SalePaymentStatus.PAID,
+      });
+      await manager.save(payment);
+      sale.payment = payment;
       sale.status = SaleStatus.PAID;
       sale.paidAt = new Date();
       await manager.save(sale);
@@ -311,29 +322,29 @@ export class SalesService {
       .from(SaleDetail)
       .where('"saleId" = :saleId', { saleId: sale.id })
       .execute();
-    await manager.save(
-      details.map((detail) => {
-        const product = products.find((item) => item.id === detail.productId);
-        const mainUnit = product.baseProduct.units.find((unit) => unit.isMain);
-        if (!mainUnit) {
-          throw new BadRequestException(
-            `Product ${product.id} no tiene una unidad principal`,
-          );
-        }
-        return manager.create(SaleDetail, {
-          sale,
-          product,
-          productName: product.baseProduct.name,
-          baseProductName: product.baseProduct.name,
-          unit: mainUnit.unit,
-          quantity: detail.quantity,
-          unitPrice: this.round2(Number(product.price)),
-          discount: '0.00',
-          subtotal: this.round2(Number(product.price) * detail.quantity),
-          notes: null,
-        });
-      }),
-    );
+    const saleDetails = details.map((detail) => {
+      const product = products.find((item) => item.id === detail.productId);
+      const mainUnit = product.baseProduct.units.find((unit) => unit.isMain);
+      if (!mainUnit) {
+        throw new BadRequestException(
+          `Product ${product.id} no tiene una unidad principal`,
+        );
+      }
+      return manager.create(SaleDetail, {
+        sale,
+        product,
+        productName: product.baseProduct.name,
+        baseProductName: product.baseProduct.name,
+        unit: mainUnit.unit,
+        quantity: detail.quantity,
+        unitPrice: this.round2(Number(product.price)),
+        discount: '0.00',
+        subtotal: this.round2(Number(product.price) * detail.quantity),
+        notes: null,
+      });
+    });
+    await manager.save(saleDetails);
+    sale.details = saleDetails;
     sale.discount = this.round2(discount);
     sale.totalAmount = this.round2(subtotal - discount);
     await manager.save(sale);
@@ -351,7 +362,7 @@ export class SalesService {
       .leftJoinAndSelect('sale.payment', 'payment')
       .leftJoinAndSelect('sale.details', 'details')
       .leftJoinAndSelect('details.product', 'detailProduct')
-      .setLock('pessimistic_write')
+      .setLock('pessimistic_write', undefined, ['sale'])
       .where('sale.id = :id', { id })
       .getOne();
     if (!sale) {
@@ -388,9 +399,10 @@ export class SalesService {
   ): Promise<CashRegisterOpening> {
     const qb = manager
       .createQueryBuilder(CashRegisterOpening, 'opening')
+      .leftJoinAndSelect('opening.responsible', 'responsible')
       .where('opening.id = :id', { id });
     if (lock) {
-      qb.setLock('pessimistic_write');
+      qb.setLock('pessimistic_write', undefined, ['opening']);
     }
     const opening = await qb.getOne();
     if (!opening) {
@@ -402,6 +414,17 @@ export class SalesService {
       );
     }
     return opening;
+  }
+
+  private assertOpeningResponsible(
+    opening: CashRegisterOpening,
+    user: JwtUser,
+  ): void {
+    if (opening.responsible.id !== user.personId) {
+      throw new ForbiddenException(
+        'Solo la persona responsable de la sesión puede operar ventas',
+      );
+    }
   }
 
   private assertPending(sale: Sale): void {
@@ -420,7 +443,7 @@ export class SalesService {
       .leftJoinAndSelect('product.baseProduct', 'baseProduct')
       .leftJoinAndSelect('baseProduct.units', 'units')
       .leftJoinAndSelect('units.unit', 'unit')
-      .setLock('pessimistic_write')
+      .setLock('pessimistic_write', undefined, ['product'])
       .where('product.id IN (:...ids)', { ids })
       .getMany();
     if (products.length !== ids.length) {

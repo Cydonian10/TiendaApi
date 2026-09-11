@@ -76,8 +76,8 @@ describe('SalesController', () => {
 
     await controller.findAll({ page: 1, limit: 20 }, user);
     await controller.findOne(1, user);
-    await controller.update(1, { discount: 1 });
-    await controller.pay(1, { paymentMethodId: 1, amount: 9 });
+    await controller.update(1, { discount: 1 }, user);
+    await controller.pay(1, { paymentMethodId: 1, amount: 9 }, user);
     await controller.cancel(
       1,
       { cancellationReason: 'Cliente desistió' },
@@ -86,11 +86,15 @@ describe('SalesController', () => {
 
     expect(service.findAll).toHaveBeenCalledWith({ page: 1, limit: 20 }, user);
     expect(service.findOne).toHaveBeenCalledWith(1, user);
-    expect(service.update).toHaveBeenCalledWith(1, { discount: 1 });
-    expect(service.pay).toHaveBeenCalledWith(1, {
-      paymentMethodId: 1,
-      amount: 9,
-    });
+    expect(service.update).toHaveBeenCalledWith(1, { discount: 1 }, user);
+    expect(service.pay).toHaveBeenCalledWith(
+      1,
+      {
+        paymentMethodId: 1,
+        amount: 9,
+      },
+      user,
+    );
     expect(service.cancel).toHaveBeenCalledWith(
       1,
       { cancellationReason: 'Cliente desistió' },

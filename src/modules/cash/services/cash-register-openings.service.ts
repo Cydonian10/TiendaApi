@@ -151,7 +151,7 @@ export class CashRegisterOpeningsService {
       const opening = await manager
         .createQueryBuilder(CashRegisterOpening, 'opening')
         .leftJoinAndSelect('opening.openedBy', 'openedBy')
-        .setLock('pessimistic_write')
+        .setLock('pessimistic_write', undefined, ['opening'])
         .where('opening.id = :id', { id })
         .getOne();
       if (!opening) {
