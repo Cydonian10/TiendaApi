@@ -12,6 +12,12 @@ import { SaleDetail } from './sale-detail.entity';
 import { SalePayment } from './sale-payment.entity';
 import { CashRegisterOpening } from '@/modules/cash/entities/cash-register-opening.entity';
 
+export enum SaleStatus {
+  PENDING = 'PENDING',
+  PAID = 'PAID',
+  CANCELLED = 'CANCELLED',
+}
+
 @Entity('sale')
 export class Sale {
   @PrimaryGeneratedColumn()
@@ -34,11 +40,26 @@ export class Sale {
   @Column({ type: 'decimal', precision: 10, scale: 2, default: 0 })
   discount: string;
 
+  @Column({ type: 'enum', enum: SaleStatus, default: SaleStatus.PENDING })
+  status: SaleStatus;
+
+  @Column({ type: 'timestamp', nullable: true })
+  paidAt: Date | null;
+
+  @Column({ type: 'timestamp', nullable: true })
+  cancelledAt: Date | null;
+
+  @ManyToOne(() => Person, { nullable: true })
+  cancelledBy: Person | null;
+
+  @Column({ type: 'varchar', length: 500, nullable: true })
+  cancellationReason: string | null;
+
   @OneToMany(() => SaleDetail, (detail) => detail.sale, { cascade: true })
   details: SaleDetail[];
 
   @OneToOne(() => SalePayment, (payment) => payment.sale, { cascade: true })
-  payment: SalePayment;
+  payment: SalePayment | null;
 
   @ManyToOne(() => CashRegisterOpening, (opening) => opening.sales, {
     nullable: false,

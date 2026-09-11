@@ -21,7 +21,10 @@ export class PaymentMethodsService {
 
   async findAll(): Promise<PaymentMethod[]> {
     await this.ensureCashPaymentMethod();
-    return this.paymentMethodRepository.find({ order: { id: 'ASC' } });
+    return this.paymentMethodRepository.find({
+      where: { active: true },
+      order: { id: 'ASC' },
+    });
   }
 
   async create(dto: CreatePaymentMethodDto): Promise<PaymentMethod> {

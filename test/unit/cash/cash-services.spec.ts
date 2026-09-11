@@ -307,6 +307,11 @@ describe('Cash services', () => {
     await expect(
       service.close(1, { details: [] }, worker),
     ).rejects.toBeInstanceOf(ForbiddenException);
+    expect(queryBuilder.setLock).toHaveBeenCalledWith(
+      'pessimistic_write',
+      undefined,
+      ['opening'],
+    );
   });
 
   it('does not allow deactivating Efectivo', async () => {
@@ -322,46 +327,202 @@ describe('Cash services', () => {
     );
   });
 
-  it('rejects a sale whose single payment differs from its final total', async () => {
-    const queryBuilder = {
-      setLock: jest.fn().mockReturnThis(),
-      where: jest.fn().mockReturnThis(),
-      getOne: jest
-        .fn()
-        .mockResolvedValue({ id: 1, status: CashOpeningStatus.OPEN }),
-    };
-    const manager = {
-      createQueryBuilder: jest.fn().mockReturnValue(queryBuilder),
+  it('lists only active payment methods for operational use', async () => {
+    const repository = {
       findOneBy: jest
         .fn()
-        .mockResolvedValueOnce({ id: 2 })
-        .mockResolvedValueOnce({ id: 1 })
-        .mockResolvedValueOnce({ id: 1, active: true }),
-      findOne: jest.fn().mockResolvedValue({
+        .mockResolvedValue({ id: 1, name: 'Efectivo', active: true }),
+      find: jest
+        .fn()
+        .mockResolvedValue([{ id: 1, name: 'Efectivo', active: true }]),
+    };
+    const service = new PaymentMethodsService(repository as never);
+
+    await expect(service.findAll()).resolves.toEqual([
+      { id: 1, name: 'Efectivo', active: true },
+    ]);
+    expect(repository.find).toHaveBeenCalledWith({
+      where: { active: true },
+      order: { id: 'ASC' },
+    });
+  });
+
+  it('rejects payment when its amount differs from a pending sale total', async () => {
+    const saleQueryBuilder = {
+      leftJoinAndSelect: jest.fn().mockReturnThis(),
+      setLock: jest.fn().mockReturnThis(),
+      where: jest.fn().mockReturnThis(),
+      getOne: jest.fn().mockResolvedValue({
         id: 1,
-        price: '10.00',
-        baseProduct: {
-          name: 'Tornillo',
-          units: [{ isMain: true, unit: { id: 1 } }],
-        },
+        status: 'PENDING',
+        totalAmount: '20.00',
+        cashOpening: { id: 1, status: CashOpeningStatus.OPEN },
+        details: [],
       }),
     };
-    const service = new SalesService(
-      {} as never,
-      {} as never,
-      unitOfWork(manager),
-    );
+    const openingQueryBuilder = {
+      leftJoinAndSelect: jest.fn().mockReturnThis(),
+      setLock: jest.fn().mockReturnThis(),
+      where: jest.fn().mockReturnThis(),
+      getOne: jest.fn().mockResolvedValue({
+        id: 1,
+        status: CashOpeningStatus.OPEN,
+        responsible: { id: worker.personId },
+      }),
+    };
+    const manager = {
+      createQueryBuilder: jest
+        .fn()
+        .mockReturnValueOnce(saleQueryBuilder)
+        .mockReturnValueOnce(openingQueryBuilder),
+      findOneBy: jest.fn().mockResolvedValue({ id: 1, active: true }),
+    };
+    const service = new SalesService({} as never, unitOfWork(manager));
 
     await expect(
-      service.create(
+      service.pay(1, { paymentMethodId: 1, amount: 19 }, worker),
+    ).rejects.toBeInstanceOf(BadRequestException);
+    expect(saleQueryBuilder.setLock).toHaveBeenCalledWith(
+      'pessimistic_write',
+      undefined,
+      ['sale'],
+    );
+    expect(openingQueryBuilder.setLock).toHaveBeenCalledWith(
+      'pessimistic_write',
+      undefined,
+      ['opening'],
+    );
+  });
+
+  it('scopes sale and product locks to their root aliases', async () => {
+    const sale = {
+      id: 1,
+      status: 'PENDING',
+      totalAmount: '10.00',
+      cashOpening: { id: 1 },
+      details: [{ product: { id: 3 }, quantity: 1 }],
+      payment: null,
+    };
+    const saleQueryBuilder = {
+      leftJoinAndSelect: jest.fn().mockReturnThis(),
+      setLock: jest.fn().mockReturnThis(),
+      where: jest.fn().mockReturnThis(),
+      getOne: jest.fn().mockResolvedValue(sale),
+    };
+    const openingQueryBuilder = {
+      leftJoinAndSelect: jest.fn().mockReturnThis(),
+      setLock: jest.fn().mockReturnThis(),
+      where: jest.fn().mockReturnThis(),
+      getOne: jest.fn().mockResolvedValue({
+        id: 1,
+        status: CashOpeningStatus.OPEN,
+        responsible: { id: worker.personId },
+      }),
+    };
+    const productQueryBuilder = {
+      leftJoinAndSelect: jest.fn().mockReturnThis(),
+      setLock: jest.fn().mockReturnThis(),
+      where: jest.fn().mockReturnThis(),
+      getMany: jest.fn().mockResolvedValue([{ id: 3, stock: '2.00' }]),
+    };
+    const manager = {
+      createQueryBuilder: jest
+        .fn()
+        .mockReturnValueOnce(saleQueryBuilder)
+        .mockReturnValueOnce(openingQueryBuilder)
+        .mockReturnValueOnce(productQueryBuilder),
+      findOneBy: jest.fn().mockResolvedValue({ id: 1, active: true }),
+      create: jest.fn().mockImplementation((_entity, value) => value),
+      save: jest.fn().mockImplementation((value) => Promise.resolve(value)),
+      findOne: jest.fn().mockResolvedValue(sale),
+    };
+    const service = new SalesService({} as never, unitOfWork(manager));
+
+    await service.pay(1, { paymentMethodId: 1, amount: 10 }, worker);
+
+    expect(saleQueryBuilder.setLock).toHaveBeenCalledWith(
+      'pessimistic_write',
+      undefined,
+      ['sale'],
+    );
+    expect(productQueryBuilder.setLock).toHaveBeenCalledWith(
+      'pessimistic_write',
+      undefined,
+      ['product'],
+    );
+    expect(sale.payment).toMatchObject({
+      amount: '10.00',
+      status: 'PAID',
+      sale,
+    });
+  });
+
+  it('rejects creating, editing, and paying sales from another responsible session', async () => {
+    const foreignOpeningQueryBuilder = {
+      leftJoinAndSelect: jest.fn().mockReturnThis(),
+      setLock: jest.fn().mockReturnThis(),
+      where: jest.fn().mockReturnThis(),
+      getOne: jest.fn().mockResolvedValue({
+        id: 4,
+        status: CashOpeningStatus.OPEN,
+        responsible: { id: administrator.personId },
+      }),
+    };
+    const foreignSaleQueryBuilder = {
+      leftJoinAndSelect: jest.fn().mockReturnThis(),
+      setLock: jest.fn().mockReturnThis(),
+      where: jest.fn().mockReturnThis(),
+      getOne: jest.fn().mockResolvedValue({
+        id: 1,
+        status: 'PENDING',
+        cashOpening: { id: 4 },
+        details: [],
+      }),
+    };
+
+    const createService = new SalesService(
+      {} as never,
+      unitOfWork({
+        createQueryBuilder: jest
+          .fn()
+          .mockReturnValue(foreignOpeningQueryBuilder),
+      }),
+    );
+    await expect(
+      createService.create(
         {
-          cashOpeningId: 1,
-          customerId: 2,
-          details: [{ productId: 1, quantity: 2 }],
-          payment: { paymentMethodId: 1, amount: 19 },
+          cashOpeningId: 4,
+          customerId: 3,
+          details: [{ productId: 1, quantity: 1 }],
         },
         worker,
       ),
-    ).rejects.toBeInstanceOf(BadRequestException);
+    ).rejects.toBeInstanceOf(ForbiddenException);
+
+    const updateService = new SalesService(
+      {} as never,
+      unitOfWork({
+        createQueryBuilder: jest
+          .fn()
+          .mockReturnValueOnce(foreignSaleQueryBuilder)
+          .mockReturnValueOnce(foreignOpeningQueryBuilder),
+      }),
+    );
+    await expect(updateService.update(1, {}, worker)).rejects.toBeInstanceOf(
+      ForbiddenException,
+    );
+
+    const payService = new SalesService(
+      {} as never,
+      unitOfWork({
+        createQueryBuilder: jest
+          .fn()
+          .mockReturnValueOnce(foreignSaleQueryBuilder)
+          .mockReturnValueOnce(foreignOpeningQueryBuilder),
+      }),
+    );
+    await expect(
+      payService.pay(1, { paymentMethodId: 1, amount: 10 }, worker),
+    ).rejects.toBeInstanceOf(ForbiddenException);
   });
 });

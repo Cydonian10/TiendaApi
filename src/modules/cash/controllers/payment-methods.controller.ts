@@ -21,12 +21,12 @@ import { PaymentMethodDto } from '../dtos/cash-response.dto';
 
 @ApiTags('Payment Methods')
 @ApiBearerAuth()
-@Roles('ADMINISTRADOR')
 @Controller('payment-methods')
 export class PaymentMethodsController {
   constructor(private readonly paymentMethodsService: PaymentMethodsService) {}
 
   @Get()
+  @Roles('ADMINISTRADOR', 'TRABAJADOR')
   @ApiOkResponse({ type: () => [PaymentMethodDto] })
   findAll() {
     return this.paymentMethodsService
@@ -37,6 +37,7 @@ export class PaymentMethodsController {
   }
 
   @Post()
+  @Roles('ADMINISTRADOR')
   @ApiCreatedResponse({ type: PaymentMethodDto })
   create(@Body() dto: CreatePaymentMethodDto) {
     return this.paymentMethodsService
@@ -45,6 +46,7 @@ export class PaymentMethodsController {
   }
 
   @Patch(':id')
+  @Roles('ADMINISTRADOR')
   @ApiOkResponse({ type: PaymentMethodDto })
   update(
     @Param('id', ParseIntPipe) id: number,
@@ -56,6 +58,7 @@ export class PaymentMethodsController {
   }
 
   @Patch(':id/activate')
+  @Roles('ADMINISTRADOR')
   @ApiOkResponse({ type: PaymentMethodDto })
   activate(@Param('id', ParseIntPipe) id: number) {
     return this.paymentMethodsService
@@ -64,6 +67,7 @@ export class PaymentMethodsController {
   }
 
   @Patch(':id/deactivate')
+  @Roles('ADMINISTRADOR')
   @ApiOkResponse({ type: PaymentMethodDto })
   deactivate(@Param('id', ParseIntPipe) id: number) {
     return this.paymentMethodsService
