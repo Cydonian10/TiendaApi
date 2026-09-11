@@ -1,6 +1,6 @@
 # SPEC 17 — Flujo de ventas pendientes, pago y cancelación
 
-> **Status:** Draft
+> **Status:** Aprobado
 > **Depends on:** SPEC 06 (products CRUD), SPEC 12 (autenticación y guards), SPEC 14 (precio y stock iniciales), SPEC 16 (cajas, sesiones y cierres)
 > **Date:** 2026-09-10
 > **Objective:** Implementar ventas con estados `PENDING`, `PAID` y `CANCELLED`, con edición previa al pago, cobro transaccional y anulación auditada mientras la sesión de caja esté abierta.
@@ -150,15 +150,15 @@ La migración agrega los estados y campos de auditoría, deja `Sale.payment` com
 
 ## Risks
 
-| Riesgo | Mitigación |
-| --- | --- |
-| Dos pagos concurrentes consumen el mismo stock disponible. | Bloquear pesimistamente la venta y los productos dentro de la transacción de pago; validar existencias tras adquirir los bloqueos. |
-| Una operación falla después de descontar o restaurar stock. | Ejecutar pago y anulación en `UnitOfWork` para revertir todos sus cambios al fallar. |
-| Una anulación posterior al cierre altera el arqueo consolidado. | Rechazar pago, edición y cancelación si la sesión asociada ya está `closed`. |
-| El motivo de anulación no identifica el movimiento inverso correspondiente. | Incluir el ID de venta y el motivo en `CashMovement.reason`. |
-| Una venta pendiente conserva un precio obsoleto. | Recalcular precios cuando se crea o edita y persistir el precio confirmado al pagar. |
-| Un trabajador intenta consultar o cancelar ventas de otro vendedor. | Filtrar consultas por el usuario autenticado y validar autorización antes de cancelar. |
-| Datos previos no cumplen los nuevos campos o estados. | La migración debe asignar estados coherentes a registros existentes y verificarse en la base local antes de desplegar. |
+| Riesgo                                                                      | Mitigación                                                                                                                         |
+| --------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------- |
+| Dos pagos concurrentes consumen el mismo stock disponible.                  | Bloquear pesimistamente la venta y los productos dentro de la transacción de pago; validar existencias tras adquirir los bloqueos. |
+| Una operación falla después de descontar o restaurar stock.                 | Ejecutar pago y anulación en `UnitOfWork` para revertir todos sus cambios al fallar.                                               |
+| Una anulación posterior al cierre altera el arqueo consolidado.             | Rechazar pago, edición y cancelación si la sesión asociada ya está `closed`.                                                       |
+| El motivo de anulación no identifica el movimiento inverso correspondiente. | Incluir el ID de venta y el motivo en `CashMovement.reason`.                                                                       |
+| Una venta pendiente conserva un precio obsoleto.                            | Recalcular precios cuando se crea o edita y persistir el precio confirmado al pagar.                                               |
+| Un trabajador intenta consultar o cancelar ventas de otro vendedor.         | Filtrar consultas por el usuario autenticado y validar autorización antes de cancelar.                                             |
+| Datos previos no cumplen los nuevos campos o estados.                       | La migración debe asignar estados coherentes a registros existentes y verificarse en la base local antes de desplegar.             |
 
 ## Lo que **no** incluye este spec
 

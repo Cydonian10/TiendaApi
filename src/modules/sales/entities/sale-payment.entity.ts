@@ -9,6 +9,11 @@ import {
 import { Sale } from './sale.entity';
 import { PaymentMethod } from './payment-method.entity';
 
+export enum SalePaymentStatus {
+  PAID = 'PAID',
+  CANCELLED = 'CANCELLED',
+}
+
 @Entity('sale_payment')
 export class SalePayment {
   @PrimaryGeneratedColumn()
@@ -25,4 +30,11 @@ export class SalePayment {
 
   @Column({ type: 'decimal', precision: 10, scale: 2 })
   amount: string;
+
+  @Column({
+    type: 'enum',
+    enum: SalePaymentStatus,
+    default: SalePaymentStatus.PAID,
+  })
+  status: SalePaymentStatus;
 }

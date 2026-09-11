@@ -1,6 +1,7 @@
-import { ApiProperty } from '@nestjs/swagger';
+import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 import { SaleDetail } from '../../entities/sale-detail.entity';
-import { Sale } from '../../entities/sale.entity';
+import { Sale, SaleStatus } from '../../entities/sale.entity';
+import { SalePaymentStatus } from '../../entities/sale-payment.entity';
 
 export class SalePaymentDto {
   @ApiProperty({ example: 1, description: 'ID del método de pago' })
@@ -14,6 +15,9 @@ export class SalePaymentDto {
 
   @ApiProperty({ example: 12.5, description: 'Monto pagado' })
   amount: number;
+
+  @ApiProperty({ enum: SalePaymentStatus, example: SalePaymentStatus.PAID })
+  status: SalePaymentStatus;
 }
 
 export class SaleDetailDto {
@@ -87,11 +91,29 @@ export class SaleDto {
   @ApiProperty({ example: 12.5, description: 'Total de la venta' })
   totalAmount: number;
 
+  @ApiProperty({ enum: SaleStatus, example: SaleStatus.PENDING })
+  status: SaleStatus;
+
+  @ApiPropertyOptional({ nullable: true, type: String, format: 'date-time' })
+  paidAt: Date | null;
+
+  @ApiPropertyOptional({ nullable: true, type: String, format: 'date-time' })
+  cancelledAt: Date | null;
+
+  @ApiPropertyOptional({ nullable: true, example: 2 })
+  cancelledById: number | null;
+
+  @ApiPropertyOptional({
+    nullable: true,
+    example: 'Cliente desistió de la compra',
+  })
+  cancellationReason: string | null;
+
   @ApiProperty({ example: 1, description: 'ID de la sesión de caja' })
   cashOpeningId: number;
 
-  @ApiProperty({ type: () => SalePaymentDto })
-  payment: SalePaymentDto;
+  @ApiPropertyOptional({ type: () => SalePaymentDto, nullable: true })
+  payment: SalePaymentDto | null;
 
   @ApiProperty({
     type: () => [SaleDetailDto],
@@ -109,12 +131,20 @@ export class SaleDto {
     dto.sellerName = `${sale.seller.firstName} ${sale.seller.lastName}`;
     dto.discount = parseFloat(sale.discount);
     dto.totalAmount = parseFloat(sale.totalAmount);
+    dto.status = sale.status;
+    dto.paidAt = sale.paidAt;
+    dto.cancelledAt = sale.cancelledAt;
+    dto.cancelledById = sale.cancelledBy?.id ?? null;
+    dto.cancellationReason = sale.cancellationReason;
     dto.cashOpeningId = sale.cashOpening.id;
-    dto.payment = {
-      paymentMethodId: sale.payment.paymentMethod.id,
-      paymentMethodName: sale.payment.paymentMethod.name,
-      amount: parseFloat(sale.payment.amount),
-    };
+    dto.payment = sale.payment
+      ? {
+          paymentMethodId: sale.payment.paymentMethod.id,
+          paymentMethodName: sale.payment.paymentMethod.name,
+          amount: parseFloat(sale.payment.amount),
+          status: sale.payment.status,
+        }
+      : null;
     dto.details = (sale.details ?? []).map((d) => SaleDetailDto.fromEntity(d));
     return dto;
   }

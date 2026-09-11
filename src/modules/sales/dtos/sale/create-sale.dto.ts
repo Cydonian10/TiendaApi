@@ -26,21 +26,6 @@ export class CreateSaleDetailDto {
   quantity: number;
 }
 
-export class CreateSalePaymentDto {
-  @IsNumber()
-  @Type(() => Number)
-  @IsInt()
-  @IsPositive()
-  @ApiProperty({ example: 1, description: 'ID del método de pago activo' })
-  paymentMethodId: number;
-
-  @IsNumber()
-  @Type(() => Number)
-  @Min(0)
-  @ApiProperty({ example: 21, description: 'Monto total pagado' })
-  amount: number;
-}
-
 export class CreateSaleDto {
   @IsNumber()
   @Type(() => Number)
@@ -64,14 +49,6 @@ export class CreateSaleDto {
     description: 'Descuento en monto fijo a restar del subtotal',
   })
   discount?: number;
-
-  @ValidateNested()
-  @Type(() => CreateSalePaymentDto)
-  @ApiProperty({
-    type: () => CreateSalePaymentDto,
-    description: 'Único pago de la venta',
-  })
-  payment: CreateSalePaymentDto;
 
   @IsArray()
   @ArrayNotEmpty()
