@@ -1,245 +1,224 @@
-# Estados de la venta
+# Cancelar y anular ventas
 
-Una venta puede tener los siguientes estados:
+> Guía operativa para `POST /sales/:id/cancel` según el SPEC 17.
 
-| Estado      | Descripción                                                           |
-| ----------- | --------------------------------------------------------------------- |
-| `PENDIENTE` | La venta fue iniciada, pero todavía no se ha completado el pago.      |
-| `PAGADA`    | El pago fue registrado correctamente y la venta fue finalizada.       |
-| `CANCELADA` | La venta fue anulada y ya no debe considerarse como una venta válida. |
+El endpoint usa la misma transición persistida, `CANCELLED`, para dos situaciones:
 
-## Flujo de estados
+- **Cancelar** una venta `PENDING`, antes de recibir el pago.
+- **Anular** una venta `PAID`, después de haber descontado stock y registrado el pago.
+
+La venta no se elimina. Sus detalles, información de pago y datos de auditoría permanecen disponibles para consultas y cierres de caja.
+
+## 1. Requisitos
+
+Antes de cancelar o anular, el sistema valida:
+
+| Requisito      | Regla                                                     |
+| -------------- | --------------------------------------------------------- |
+| Autenticación  | El usuario debe tener rol `ADMINISTRADOR` o `TRABAJADOR`. |
+| Autorización   | Puede hacerlo el vendedor original o un `ADMINISTRADOR`.  |
+| Sesión de caja | `cashOpening` debe seguir en estado `OPEN`.               |
+| Estado         | La venta debe ser `PENDING` o `PAID`.                     |
+| Motivo         | Texto obligatorio de 1 a 500 caracteres.                  |
+| Idempotencia   | Una venta `CANCELLED` no puede cancelarse otra vez.       |
+
+Una venta vinculada a una sesión cerrada no puede cancelarse, aunque el usuario sea administrador. El cierre de caja es el límite operativo de esta acción.
+
+## 2. Transiciones permitidas
 
 ```mermaid
 stateDiagram-v2
-    [*] --> PENDIENTE
+    [*] --> PENDING
+    PENDING --> CANCELLED: Cancelar sin pago
+    PENDING --> PAID: Pago confirmado
+    PAID --> CANCELLED: Anular con caja abierta
+    CANCELLED --> [*]
 
-    PENDIENTE --> PAGADA : Pago confirmado
-    PENDIENTE --> CANCELADA : Cancelar venta
-
-    PAGADA --> CANCELADA : Anular venta
-
-    PAGADA --> [*]
-    CANCELADA --> [*]
+    note right of CANCELLED
+      Se conservan motivo,
+      usuario y fecha.
+    end note
 ```
 
----
+No se permite:
 
-# Flujo completo de venta
+- Cancelar una venta ya `CANCELLED`.
+- Anular una venta `PAID` después del cierre de su sesión.
+- Volver de `CANCELLED` a `PENDING` o `PAID`.
+- Eliminar la venta para ocultar su historial.
 
-```mermaid
-flowchart TD
-    A([Inicio]) --> B[Usuario inicia sesión]
-    B --> C[Seleccionar caja registradora]
+## 3. Endpoint
 
-    C --> D{¿Caja abierta?}
-
-    D -- No --> E[Abrir caja]
-    E --> F[Iniciar venta]
-
-    D -- Sí --> F
-
-    F --> G[Crear venta con estado PENDIENTE]
-
-    G --> H[Agregar productos]
-
-    H --> I{¿Hay productos?}
-
-    I -- No --> J{¿Cancelar venta?}
-
-    J -- Sí --> K[Cambiar estado a CANCELADA]
-    K --> Z([Fin])
-
-    J -- No --> H
-
-    I -- Sí --> L[Validar stock]
-
-    L --> M{¿Stock suficiente?}
-
-    M -- No --> N[Mostrar error de stock]
-    N --> H
-
-    M -- Sí --> O[Calcular total]
-
-    O --> P{¿Continuar con la venta?}
-
-    P -- No --> K
-
-    P -- Sí --> Q[Seleccionar método de pago]
-    Q --> R[Registrar pago]
-
-    R --> S{¿Pago correcto?}
-
-    S -- No --> T[Mantener venta PENDIENTE]
-    T --> Q
-
-    S -- Sí --> U[Cambiar estado a PAGADA]
-    U --> V[Registrar detalle de venta]
-    V --> W[Actualizar stock]
-    W --> X[Registrar movimiento de caja]
-    X --> Y[Generar ticket]
-    Y --> Z([Fin])
+```http
+POST /sales/:id/cancel
+Authorization: Bearer <token>
+Content-Type: application/json
 ```
 
----
-
-# Cancelación de una venta
-
-Una venta puede cancelarse mientras está pendiente o después de haber sido pagada.
-
-## Cancelar venta pendiente
-
-```mermaid
-flowchart TD
-    A[Venta PENDIENTE] --> B[Usuario solicita cancelar]
-    B --> C[Registrar motivo de cancelación]
-    C --> D[Cambiar estado a CANCELADA]
-    D --> E[Registrar usuario que canceló]
-    E --> F[Registrar fecha de cancelación]
-    F --> G([Fin])
-```
-
-Cuando una venta está `PENDIENTE`, normalmente todavía no se modificó el stock ni se registraron movimientos definitivos de caja.
-
----
-
-## Anular una venta pagada
-
-Si una venta ya está `PAGADA`, la cancelación necesita más operaciones.
-
-```mermaid
-flowchart TD
-    A[Venta PAGADA] --> B[Usuario solicita anulación]
-
-    B --> C{¿Puede anular ventas?}
-
-    C -- No --> D[Mostrar acceso denegado]
-
-    C -- Sí --> E[Solicitar motivo de anulación]
-
-    E --> F[Registrar anulación]
-
-    F --> G[Devolver productos al stock]
-
-    G --> H[Registrar movimiento inverso de caja]
-
-    H --> I[Cancelar o revertir pagos]
-
-    I --> J[Cambiar venta a CANCELADA]
-
-    J --> K[Registrar usuario y fecha]
-
-    K --> L([Fin])
-```
-
----
-
-# Reglas de cancelación
-
-- Una venta no debe eliminarse de la base de datos.
-- Una venta cancelada conserva su información para auditoría.
-- Debe registrarse quién canceló la venta.
-- Debe registrarse cuándo fue cancelada.
-- Debe registrarse el motivo de cancelación.
-- Una venta `CANCELADA` no debe contarse en los ingresos del día.
-- Una venta `CANCELADA` no debe contarse dentro de las ventas efectivas.
-- Si una venta `PAGADA` es anulada, el stock debe restaurarse.
-- Si afectó la caja, debe crearse un movimiento inverso.
-- No se debe borrar el movimiento original.
-- Los pagos asociados deben quedar anulados o revertidos según corresponda.
-
----
-
-# Campos recomendados para `sales`
-
-```text
-sales
---------------------------------
-id
-cash_register_opening_id
-user_id
-status
-subtotal
-total
-created_at
-paid_at
-
-cancelled_at
-cancelled_by
-cancellation_reason
-```
-
-El campo:
-
-```text
-status
-```
-
-podría aceptar:
-
-```text
-PENDING
-PAID
-CANCELLED
-```
-
-o en español:
-
-```text
-PENDIENTE
-PAGADA
-CANCELADA
-```
-
-Para código recomiendo mantener los valores en inglés:
-
-```typescript
-enum SaleStatus {
-  PENDING = 'PENDING',
-  PAID = 'PAID',
-  CANCELLED = 'CANCELLED',
+```json
+{
+  "cancellationReason": "Cliente desistió de la compra"
 }
 ```
 
----
-
-# Ejemplo del ciclo de vida
+El motivo se almacena en la venta. En caso de una venta pagada, también se incorpora al motivo del movimiento inverso de caja:
 
 ```text
-Venta #125
-
-10:20
-PENDING
-↓
-Se agregan 3 productos
-↓
-Total S/ 58.00
-↓
-Pago con Yape
-↓
-10:23
-PAID
-↓
-Se genera ticket
+Anulación de venta #42: Cliente desistió de la compra
 ```
 
-Si posteriormente se anula:
+## 4. Cancelar una venta pendiente
+
+Una venta `PENDING` todavía no tiene `SalePayment` y no ha reducido el stock.
+
+```mermaid
+flowchart TD
+    A[Venta PENDING] --> B[POST /sales/:id/cancel]
+    B --> C{¿Usuario autorizado?}
+    C -- No --> D[403 Forbidden]
+    C -- Sí --> E{¿Sesión OPEN?}
+    E -- No --> F[400 Bad Request]
+    E -- Sí --> G[Validar motivo]
+    G -- Inválido --> H[400 Bad Request]
+    G -- Válido --> I[Guardar auditoría]
+    I --> J[Estado CANCELLED]
+    J --> K([Fin])
+```
+
+La transacción solo actualiza la venta:
+
+| Registro                  | Resultado                                     |
+| ------------------------- | --------------------------------------------- |
+| `sale.status`             | `CANCELLED`.                                  |
+| `sale.cancelledAt`        | Fecha y hora de la cancelación.               |
+| `sale.cancelledBy`        | Persona autenticada que ejecutó la operación. |
+| `sale.cancellationReason` | Motivo enviado por el usuario.                |
+| `sale_payment`            | No se crea ni se modifica.                    |
+| `product.stock`           | No cambia.                                    |
+| `cash_movement`           | No se crea.                                   |
+
+Respuesta resumida:
+
+```json
+{
+  "id": 42,
+  "status": "CANCELLED",
+  "payment": null,
+  "cancelledById": 5,
+  "cancellationReason": "Cliente desistió de la compra"
+}
+```
+
+## 5. Anular una venta pagada
+
+Una venta `PAID` ya descontó unidades y su pago contribuye al importe efectivo de la sesión. Por eso la anulación debe revertir sus efectos dentro de una única transacción.
+
+```mermaid
+flowchart TD
+    A[Venta PAID] --> B[POST /sales/:id/cancel]
+    B --> C{¿Vendedor original o ADMINISTRADOR?}
+    C -- No --> D[403 Forbidden]
+    C -- Sí --> E{¿Sesión OPEN?}
+    E -- No --> F[400 Bad Request]
+    E -- Sí --> G[Bloquear venta y productos]
+    G --> H[Restaurar stock]
+    H --> I[Cambiar SalePayment a CANCELLED]
+    I --> J[Crear CashMovement EXPENSE]
+    J --> K[Registrar auditoría de venta]
+    K --> L[Estado CANCELLED]
+    L --> M([Fin])
+```
+
+La operación realiza estos cambios:
+
+1. Bloquea la venta y los productos para evitar modificaciones concurrentes.
+2. Suma al stock la cantidad de cada detalle.
+3. Conserva el mismo `SalePayment` y cambia su estado a `CANCELLED`.
+4. Crea un movimiento inverso de caja:
+
+```ts
+{
+  opening: sale.cashOpening,
+  type: CashMovementType.EXPENSE,
+  amount: sale.totalAmount,
+  reason: `Anulación de venta #${sale.id}: ${cancellationReason}`,
+  createdBy: cancelledBy,
+}
+```
+
+5. Guarda `cancelledAt`, `cancelledBy` y `cancellationReason`.
+6. Cambia `sale.status` a `CANCELLED`.
+
+Si falla cualquiera de estos pasos, la transacción hace rollback: no queda stock restaurado sin auditoría, pago cancelado sin egreso ni venta parcialmente anulada.
+
+## 6. Efecto en caja
+
+La anulación no borra el ingreso original ni elimina la venta.
+
+| Elemento           | Antes de anular      | Después de anular                      |
+| ------------------ | -------------------- | -------------------------------------- |
+| Venta              | `PAID`               | `CANCELLED`                            |
+| Pago               | `PAID`               | `CANCELLED`                            |
+| Stock              | Descontado           | Restaurado                             |
+| Ingreso efectivo   | Incluido por el pago | Excluido porque el pago está cancelado |
+| Movimiento inverso | No existe            | `EXPENSE` por `sale.totalAmount`       |
+
+Durante el cierre, `SalePayment` solo aporta importes cuando su estado es `PAID`. El movimiento `EXPENSE` conserva la trazabilidad de la reversión en la sesión.
+
+## 7. Auditoría persistida
+
+Una venta cancelada conserva como mínimo:
+
+| Campo                | Uso                                               |
+| -------------------- | ------------------------------------------------- |
+| `status`             | Estado final `CANCELLED`.                         |
+| `cancelledAt`        | Momento de la operación.                          |
+| `cancelledBy`        | Persona que realizó la cancelación.               |
+| `cancellationReason` | Justificación proporcionada.                      |
+| `details`            | Productos, cantidades y precios de la venta.      |
+| `payment`            | Pago original, con estado `CANCELLED` si existía. |
+| `cashOpening`        | Sesión donde ocurrió la venta y su reversión.     |
+
+Con estos datos se puede explicar qué ocurrió sin borrar ni sobrescribir el historial original.
+
+## 8. Permisos y errores
+
+| Situación                                 | Resultado                                       |
+| ----------------------------------------- | ----------------------------------------------- |
+| Vendedor original cancela su propia venta | Permitido si la sesión está abierta.            |
+| `ADMINISTRADOR` cancela cualquier venta   | Permitido si la sesión está abierta.            |
+| Otro `TRABAJADOR` intenta cancelarla      | `403 Forbidden`.                                |
+| Venta inexistente                         | `404 Not Found`.                                |
+| Sesión inexistente                        | `404 Not Found`.                                |
+| Sesión cerrada                            | `400 Bad Request`.                              |
+| Venta ya `CANCELLED`                      | `400 Bad Request`.                              |
+| Motivo vacío                              | `400 Bad Request`.                              |
+| Motivo mayor de 500 caracteres            | `400 Bad Request`.                              |
+| Venta `PAID` sin pago asociado            | `400 Bad Request`; no se completa la anulación. |
+
+## 9. Ejemplo de ciclo de vida
 
 ```text
-Venta #125
-
-PAID
-↓
-Usuario solicita anulación
-↓
-Motivo:
-"Cliente solicitó cancelar la compra"
-↓
-Stock restaurado
-↓
-Movimiento de caja revertido
-↓
-CANCELLED
+Venta #42
+  PENDING
+    └── Se agregan productos y se calcula S/ 27.50
+  PAID
+    └── Se confirma un pago de S/ 27.50
+    └── Se descuentan 2 unidades del stock
+  CANCELLED
+    └── Se restaura el stock
+    └── El pago pasa a CANCELLED
+    └── Se registra un EXPENSE de S/ 27.50
+    └── Se conserva el motivo y el usuario responsable
 ```
 
-La venta `#125` sigue existiendo en la base de datos; simplemente queda registrada como cancelada.
+## 10. Fuera de alcance
+
+Este flujo no contempla:
+
+- Anulación después del cierre de caja.
+- Devoluciones parciales o cambios de productos.
+- Pagos mixtos o múltiples pagos por venta.
+- Ventas fiadas o cobros posteriores.
+- Tickets, impresión o notas de crédito.
+- Reapertura de sesiones cerradas.
